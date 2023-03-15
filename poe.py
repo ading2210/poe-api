@@ -1,5 +1,6 @@
 import requests, re, json, random, logging
-import websocket
+from contextlib import closing
+from websocket import create_connection
 from pathlib import Path
 
 parent_path = Path(__file__).resolve().parent
@@ -45,6 +46,7 @@ class Poe:
     self.next_data = self.get_next_data()
     self.channel = self.get_channel_data()
     self.bots = self.get_bots()
+    self.bot_names = self.get_bot_names()
 
     self.gql_headers = {
       "poe-formkey": self.formkey,
@@ -75,10 +77,17 @@ class Poe:
       r = self.session.get(url)
 
       r.raise_for_status()
-      bot_object = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]["defaultBotObject"]
-      bots[bot_object["nickname"]] = bot_object
+      chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
+      bots[chat_data["defaultBotObject"]["nickname"]] = chat_data
           
     return bots
+  
+  def get_bot_names(self):
+    bot_names = {}
+    for bot_nickname in self.bots:
+      bot_obj = self.bots[bot_nickname]["defaultBotObject"]
+      bot_names[bot_nickname] = bot_obj["displayName"]
+    return bot_names
   
   def get_channel_data(self):
     logger.info("Downloading channel data...")
@@ -103,7 +112,16 @@ class Poe:
         }
       ]
     })
-    
+  
+  def send_message(self, chatbot, message, with_chat_break=False):
+    result = self.send_query("AddHumanMessageMutation", {
+      "bot": chatbot,
+      "query": message,
+      "chatId": self.bots[chatbot]["chatId"],
+      "source": None,
+      "withChatBreak": with_chat_break
+    })
+        
   def get_websocket_url(self, channel=None):
     if channel is None:
       channel = self.channel
