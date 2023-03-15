@@ -14,8 +14,15 @@ def load_queries():
     with open(path) as f:
       queries[path.stem] = f.read()
 
+def generate_payload(query_name, variables):
+  return {
+    "queryName": query_name,
+    "query": queries[query_name],
+    "variables": variables
+  }
+
 class Poe:
-  gql_post = "https://poe.com/api/gql_POST"
+  gql_url = "https://poe.com/api/gql_POST"
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
 
@@ -43,6 +50,8 @@ class Poe:
       "poe-tchannel": self.channel["channel"],
     }
     self.gql_headers = {**self.gql_headers, **self.headers}
+
+    self.subscribe()
     
   def get_next_data(self):
     logger.info("Downloading next_data...")
@@ -62,6 +71,26 @@ class Poe:
     r = self.session.get(self.settings_url)
     return r.json()["tchannelData"]
   
+  def send_query(self, query_name, variables):
+    payload = generate_payload(query_name, variables)
+    r = self.session.post(self.gql_url, json=payload, headers=self.gql_headers)
+    return r.json()
+  
+  def subscribe(self):
+    result = self.send_query("AutoSubscriptionMutation", {
+      "subscriptions": [
+        {
+          "subscriptionName": "messageAdded",
+          "query": queries["MessageAddedSubscription"]
+        },
+        {
+          "subscriptionName": "viewerStateUpdated",
+          "query": queries["ViewerStateUpdatedSubscription"]
+        }
+      ]
+    })
+    print(result)
+    
   def get_websocket_url(self, channel=None):
     if channel is None:
       channel = self.channel
