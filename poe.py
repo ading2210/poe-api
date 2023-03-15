@@ -4,9 +4,15 @@ from pathlib import Path
 
 parent_path = Path(__file__).resolve().parent
 queries_path = parent_path / "graphql"
+queries = {}
 
 logging.basicConfig()
 logger = logging.getLogger()
+
+def load_queries():
+  for path in queries_path.iterdir():
+    with open(path) as f:
+      queries[path.stem] = f.read()
 
 class Poe:
   gql_post = "https://poe.com/api/gql_POST"
@@ -61,3 +67,5 @@ class Poe:
       channel = self.channel
     query = f'?min_seq={channel["minSeq"]}&channel={channel["channel"]}&hash={channel["channelHash"]}'
     return f'wss://tch{random.randint(1, 1e6)}.tch.{channel["baseHost"]}/up/{channel["boxName"]}/updates'+query
+
+load_queries()
