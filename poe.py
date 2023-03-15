@@ -44,6 +44,7 @@ class Poe:
     self.session.headers.update(self.headers)
     self.next_data = self.get_next_data()
     self.channel = self.get_channel_data()
+    self.bots = self.get_bots()
 
     self.gql_headers = {
       "poe-formkey": self.formkey,
@@ -61,10 +62,23 @@ class Poe:
     next_data = json.loads(json_text)
 
     self.formkey = next_data["props"]["formkey"]
-    self.bots = next_data["props"]["pageProps"]["payload"]["viewer"]["availableBots"]
     self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
     
     return next_data
+  
+  def get_bots(self):
+    bot_list = self.next_data["props"]["pageProps"]["payload"]["viewer"]["availableBots"]
+    bots = {}
+    for bot in bot_list:
+      url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{bot["displayName"].lower()}.json'
+      logger.info("Downloading "+url)
+      r = self.session.get(url)
+
+      r.raise_for_status()
+      bot_object = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]["defaultBotObject"]
+      bots[bot_object["nickname"]] = bot_object
+          
+    return bots
   
   def get_channel_data(self):
     logger.info("Downloading channel data...")
@@ -89,7 +103,6 @@ class Poe:
         }
       ]
     })
-    print(result)
     
   def get_websocket_url(self, channel=None):
     if channel is None:
