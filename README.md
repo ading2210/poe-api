@@ -1,4 +1,7 @@
 # Python Poe API
+
+[![PyPi Version](https://img.shields.io/pypi/v/poe-api.svg)](https://pypi.org/project/poe-api/)
+
 This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Antropic's Claude.
 
 ## Features:
@@ -6,6 +9,12 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
  - Download bot list
  - Send messages
  - Stream bot responses
+
+## Installation:
+You can install this library by running the following command:
+```
+pip3 install poe-api
+```
 
 ## Documentation:
 An example can be be found in `/examples/example.py`.
@@ -37,6 +46,7 @@ The function is a generator which returns the most recent version of the generat
 
 Streamed Example:
 ```python
+message = "Summarize the GNU GPL v3"
 for chunk in client.send_message("capybara", message):
   print(chunk["text_new"], end="", flush=True)
 ```
