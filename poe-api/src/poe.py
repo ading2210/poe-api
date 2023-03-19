@@ -3,7 +3,7 @@ import websocket
 from pathlib import Path
 
 parent_path = Path(__file__).resolve().parent
-queries_path = parent_path / "graphql"
+queries_path = parent_path / "poe_graphql"
 queries = {}
 
 logging.basicConfig()
@@ -13,6 +13,8 @@ user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/1
 
 def load_queries():
   for path in queries_path.iterdir():
+    if path.suffix != ".graphql":
+      continue
     with open(path) as f:
       queries[path.stem] = f.read()
 
@@ -55,8 +57,6 @@ class Client:
     }
     self.gql_headers = {**self.gql_headers, **self.headers}
 
-    self.ws = websocket.WebSocket()
-    self.ws.connect(self.get_websocket_url(), header={"User-Agent": user_agent})
     self.subscribe()
     
   def get_next_data(self):
@@ -135,16 +135,24 @@ class Client:
       "withChatBreak": with_chat_break
     })
 
+    ws = websocket.WebSocket()
+    ws.connect(self.get_websocket_url(), header={"User-Agent": user_agent})
+
     last_text = ""
     while True:
-      data = json.loads(self.ws.recv())
+      data = json.loads(ws.recv())
       message = json.loads(data["messages"][0])["payload"]["data"]["messageAdded"]
       if message["state"] == "complete":
-        break
+        if last_text:
+          break
+        else:
+          continue
 
       message["text_new"] = message["text"][len(last_text):]
       last_text = message["text"]
 
       yield message
+    
+    ws.close()
     
 load_queries()
