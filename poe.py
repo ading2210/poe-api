@@ -22,7 +22,7 @@ def generate_payload(query_name, variables):
     "variables": variables
   }
 
-class Poe:
+class Client:
   gql_url = "https://poe.com/api/gql_POST"
   gql_recv_url = "https://poe.com/api/receive_POST"
   home_url = "https://poe.com"
