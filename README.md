@@ -8,14 +8,17 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
  - Stream bot responses
 
 ## Documentation:
-An example can be be found in `/example.py`.
+An example can be be found in `/examples/example.py`.
 
 ### Using the Client:
-To use this library, simply import `poe` and create a `poe.Client` instance, passing in your token as the only argument. You can find your token in the `p-b` field in your browser's cookies. Note that the following examples assume `client` is the name of your `poe.Client` instance.
+To use this library, simply import `poe` and create a `poe.Client` instance, passing in your token as the only argument. You can find your token in the `p-b` field in your browser's cookies. 
+
 ```python
 import poe
 client = poe.Poe("TOKEN_HERE")
 ```
+
+Note that the following examples assume `client` is the name of your `poe.Client` instance.
 
 #### Downloading the Available Bots:
 The client downloads all of the available bots upon initialization and stores them within `poe.Client.bots`. A dictionary that maps bot codenames to their display names can be found at `poe.Client.bot_names`. If you want to refresh these values, you can call `poe.Client.get_bots`.
@@ -62,7 +65,7 @@ import poe
 poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
 ```
 
-### Copyright: 
-This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). ALl code has been written by me, [ading2210](https://github.com/ading2210).
+## Copyright: 
+This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). All code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
 
 Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
