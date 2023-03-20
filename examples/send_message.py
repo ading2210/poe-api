@@ -2,7 +2,7 @@ import poe
 import logging
 import sys
 
-poe.logger.setLevel(logging.INFO)
+#send a message and stream the response
 
 token = sys.argv[1]
 client = poe.Client(token)

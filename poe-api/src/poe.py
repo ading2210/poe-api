@@ -173,4 +173,12 @@ class Client:
     })
     return result["data"]["messageBreakCreate"]["message"]
 
+  def get_message_history(self, chatbot, count=25, cursor=None):
+    result = self.send_query("ChatListPaginationQuery", {
+      "count": count,
+      "cursor": cursor,
+      "id": self.bots[chatbot]["id"]
+    })
+    return result["data"]["node"]["messagesConnection"]["edges"]
+
 load_queries()
