@@ -24,6 +24,17 @@ def generate_payload(query_name, variables):
     "variables": variables
   }
 
+def request_with_retries(method, *args, **kwargs):
+  attempts = kwargs.get("attempts") or 10
+  url = args[0]
+  for i in range(attempts):
+    r = method(*args, **kwargs)
+    if r.status_code == 200:
+      return r
+    logger.warn(f"Server returned a status code of {r.status_code} while downloading {url}. Retrying ({i+1}/{attempts})...")
+    if i+1 == attempts:
+      raise RuntimeError(f"Failed to download {url} too many times.")
+
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
   gql_recv_url = "https://poe.com/api/receive_POST"
@@ -61,7 +72,8 @@ class Client:
     
   def get_next_data(self):
     logger.info("Downloading next_data...")
-    r = self.session.get(self.home_url)
+    
+    r = request_with_retries(self.session.get, self.home_url)
     json_regex = r'<script id="__NEXT_DATA__" type="application\/json">(.+?)</script>'
     json_text = re.search(json_regex, r.text).group(1)
     next_data = json.loads(json_text)
@@ -77,9 +89,9 @@ class Client:
     for bot in bot_list:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{bot["displayName"].lower()}.json'
       logger.info("Downloading "+url)
-      r = self.session.get(url)
+      
+      r = request_with_retries(self.session.get, url)
 
-      r.raise_for_status()
       chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
       bots[chat_data["defaultBotObject"]["nickname"]] = chat_data
           
