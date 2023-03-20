@@ -9,7 +9,7 @@ long_description = (base_path / "README.md").read_text()
 
 setuptools.setup(
   name="poe-api",
-  version="0.1.0",
+  version="0.1.1",
   author="ading2210",
   description="A reverse engineered API wrapper for Quora's Poe",
   long_description=long_description,
@@ -22,7 +22,10 @@ setuptools.setup(
   ],
   python_requires=">=3.7",
   package_dir={
-    "": "poe-api/src",
+    "": "poe-api/src"
+  },
+  package_data={
+    "poe_graphql": ["*.graphql"]
   },
   py_modules=["poe"],
   include_package_data=True,

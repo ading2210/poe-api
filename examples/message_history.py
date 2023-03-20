@@ -2,7 +2,7 @@ import poe
 import logging
 import sys
 
-#fetch last 5 messages in Sage's convesation
+#fetch the last 10 messages in Sage's conversation
 
 token = sys.argv[1]
 client = poe.Client(token)

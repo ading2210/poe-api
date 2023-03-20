@@ -84,7 +84,11 @@ class Client:
     return next_data
   
   def get_bots(self):
-    bot_list = self.next_data["props"]["pageProps"]["payload"]["viewer"]["availableBots"]
+    viewer = self.next_data["props"]["pageProps"]["payload"]["viewer"]
+    if not "availableBots" in viewer:
+      raise RuntimeError("Invalid token.")
+    bot_list = viewer["availableBots"]
+
     bots = {}
     for bot in bot_list:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{bot["displayName"].lower()}.json'

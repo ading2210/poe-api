@@ -21,7 +21,10 @@ pip3 install poe-api
 ```
 
 ## Documentation:
-An example can be be found in `/examples/example.py`.
+Examples can be found in the `/examples` directory. To run these examples, pass in your token as a command-line argument.
+```
+python3 examples/temporary_message.py "TOKEN_HERE"
+```
 
 ### Using the Client:
 To use this library, simply import `poe` and create a `poe.Client` instance, passing in your token as the only argument. You can find your token in the `p-b` field in your browser's cookies. 
@@ -31,10 +34,11 @@ import poe
 client = poe.Client("TOKEN_HERE")
 ```
 
-Note that the following examples assume `client` is the name of your `poe.Client` instance.
+Note that the following examples assume `client` is the name of your `poe.Client` instance. If the token is invalid, a RuntimeError will be raised.
 
 #### Downloading the Available Bots:
 The client downloads all of the available bots upon initialization and stores them within `poe.Client.bots`. A dictionary that maps bot codenames to their display names can be found at `poe.Client.bot_names`. If you want to refresh these values, you can call `poe.Client.get_bots`.
+
 ```python
 print(client.bot_names)
 #{'capybara': 'Sage', 'beaver': 'GPT-4', 'a2_2': 'Claude+', 'a2': 'Claude', 'chinchilla': 'ChatGPT', 'nutria': 'Dragonfly'}
@@ -65,6 +69,7 @@ print(chunk["text"])
 
 #### Clearing the Conversation Context:
 If you want to clear the the context of a conversation without sending a message, you can use `client.send_chat_break`. The only argument is the codename of the bot whose context will be cleared.
+
 ```python
 client.send_chat_break("capybara")
 ```
@@ -75,6 +80,7 @@ To download past messages in a conversation, use the `client.get_message_history
  - `chatbot` - The codename of the chatbot.
  - `count = 25` - The number of messages to download.
  - `cursor = None` - The message ID to start at instead of the latest one.
+
 ```python
 message_history = client.get_message_history("capybara", count=10)
 print(json.dumps(message_history, indent=2))
@@ -105,7 +111,6 @@ print(json.dumps(message_history, indent=2))
 #### Deleting Messages:
 To delete messages, use the `client.delete_message` function, which accepts a single argument. You can pass a single message ID into it to delete a single message, or you can pass a list of message IDs to delete multiple messages at once.
 
-Deleting a Single Message:
 ```python
 #delete a single message
 client.delete(96105719)
@@ -118,6 +123,7 @@ client.delete([96105719, 96097108, 96097078, 96084421, 96084402])
 To purge an entire conversation, or just the last few messages, you can use the `client.purge_messages` function. This function accepts the following arguments:
  - `chatbot` - The codename of the chatbot.
  - `count = None` - The number of messages to be deleted, starting from the latest one. The default behavior is to delete every single message.
+
 ```python
 #purge just the last 10 messages
 client.purge_conversation("capybara", count=10)
@@ -129,6 +135,7 @@ client.purge_conversation("capybara")
 ### Misc:
 #### Changing the Logging Level:
 If you want to show debug messages, simply call `poe.logger.setLevel`.
+
 ```python
 import poe
 poe.logger.setLevel(logging.INFO)
@@ -136,6 +143,7 @@ poe.logger.setLevel(logging.INFO)
 
 #### Setting a Custom User-Agent:
 If you want to change the user-agent that is being spoofed, set `poe.user_agent`.
+
 ```python
 import poe
 poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
