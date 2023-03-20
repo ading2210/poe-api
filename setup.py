@@ -1,12 +1,15 @@
 import setuptools, glob
 from pathlib import Path
 
+#note: build this package with the following command:
+#pip wheel --no-deps -w dist .
+
 base_path = Path(__file__).parent
 long_description = (base_path / "README.md").read_text()
 
 setuptools.setup(
   name="poe-api",
-  version="0.0.1",
+  version="0.0.2",
   author="ading2210",
   description="A reverse engineered API wrapper for Quora's Poe",
   long_description=long_description,

@@ -9,6 +9,7 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
  - Download bot list
  - Send messages
  - Stream bot responses
+ - Clear conversation context
 
 ## Installation:
 You can install this library by running the following command:
@@ -24,7 +25,7 @@ To use this library, simply import `poe` and create a `poe.Client` instance, pas
 
 ```python
 import poe
-client = poe.Poe("TOKEN_HERE")
+client = poe.Client("TOKEN_HERE")
 ```
 
 Note that the following examples assume `client` is the name of your `poe.Client` instance.
@@ -59,6 +60,13 @@ for chunk in client.send_message("capybara", message):
 print(chunk["text"])
 ```
 
+### Clearing the Conversation Context:
+If you want to clear the the context of a conversation without sending a message, you can use `client.send_chat_break`. The only argument is the codename of the bot whose context will be cleared.
+```python
+client.send_chat_break("capybara")
+```
+This function returns the message which represents the chat break.
+
 ### Misc:
 #### Changing the Logging Level:
 If you want to show debug messages, simply call `poe.logger.setLevel`.
@@ -69,7 +77,6 @@ poe.logger.setLevel(logging.INFO)
 
 #### Setting a Custom User-Agent:
 If you want to change the user-agent that is being spoofed, set `poe.user_agent`.
-
 ```python
 import poe
 poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"

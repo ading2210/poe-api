@@ -154,5 +154,11 @@ class Client:
       yield message
     
     ws.close()
-    
+  
+  def send_chat_break(self, chatbot):
+    result = self.send_query("AddMessageBreakMutation", {
+      "chatId": self.bots[chatbot]["chatId"]
+    })
+    return result["data"]["messageBreakCreate"]["message"]
+
 load_queries()
