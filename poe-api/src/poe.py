@@ -32,8 +32,8 @@ def request_with_retries(method, *args, **kwargs):
     if r.status_code == 200:
       return r
     logger.warn(f"Server returned a status code of {r.status_code} while downloading {url}. Retrying ({i+1}/{attempts})...")
-    if i+1 == attempts:
-      raise RuntimeError(f"Failed to download {url} too many times.")
+  
+  raise RuntimeError(f"Failed to download {url} too many times.")
 
 class Client:
   gql_url = "https://poe.com/api/gql_POST"

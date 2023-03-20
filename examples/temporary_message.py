@@ -4,8 +4,6 @@ import sys
 
 #send a message and immediately delete it
 
-poe.logger.setLevel(logging.INFO)
-
 token = sys.argv[1]
 client = poe.Client(token)
 
