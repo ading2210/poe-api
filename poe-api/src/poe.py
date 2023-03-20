@@ -168,17 +168,45 @@ class Client:
     ws.close()
   
   def send_chat_break(self, chatbot):
+    logger.info(f"Sending chat break to {chatbot}")
     result = self.send_query("AddMessageBreakMutation", {
       "chatId": self.bots[chatbot]["chatId"]
     })
     return result["data"]["messageBreakCreate"]["message"]
 
   def get_message_history(self, chatbot, count=25, cursor=None):
+    logger.info(f"Downloading {count} messages from {chatbot}")
     result = self.send_query("ChatListPaginationQuery", {
       "count": count,
       "cursor": cursor,
       "id": self.bots[chatbot]["id"]
     })
     return result["data"]["node"]["messagesConnection"]["edges"]
+
+  def delete_message(self, message_ids):
+    logger.info(f"Deleting messages: {message_ids}")
+    if not type(message_ids) is list:
+      message_ids = [int(message_ids)]
+
+    result = self.send_query("DeleteMessageMutation", {
+      "messageIds": message_ids
+    })
+  
+  def purge_conversation(self, chatbot, count=-1):
+    logger.info(f"Purging messages from {chatbot}")
+    last_messages = self.get_message_history(chatbot)[::-1]
+    while last_messages:
+      message_ids = []
+      for message in last_messages:
+        if count == 0:
+          break
+        count -= 1  
+        message_ids.append(message["node"]["messageId"])
+
+      self.delete_message(message_ids)      
+      if count == 0:
+        return
+      last_messages = self.get_message_history(chatbot)[::-1]
+    logger.info(f"No more messages left to delete.")
 
 load_queries()
