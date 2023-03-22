@@ -142,6 +142,9 @@ class Client:
     })
   
   def send_message(self, chatbot, message, with_chat_break=False):
+    ws = websocket.WebSocket()
+    ws.connect(self.get_websocket_url(), header={"User-Agent": user_agent})
+
     logger.info(f"Sending message to {chatbot}: {message}")
     message_data = self.send_query("AddHumanMessageMutation", {
       "bot": chatbot,
@@ -150,9 +153,6 @@ class Client:
       "source": None,
       "withChatBreak": with_chat_break
     })
-
-    ws = websocket.WebSocket()
-    ws.connect(self.get_websocket_url(), header={"User-Agent": user_agent})
 
     last_text = ""
     while True:
