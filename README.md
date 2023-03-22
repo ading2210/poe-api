@@ -4,6 +4,24 @@
 
 This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Antropic's Claude.
 
+## Table of Contents:
+- [Features](#features)
+- [Installation](#installation)
+- [Documentation](#documentation)
+  * [Using the Client](#using-the-client)
+    + [Downloading the Available Bots](#downloading-the-available-bots)
+    + [Sending Messages](#sending-messages)
+    + [Clearing the Conversation Context](#clearing-the-conversation-context)
+    + [Downloading Conversation History](#downloading-conversation-history)
+    + [Deleting Messages](#deleting-messages)
+    + [Purging a Conversation](#purging-a-conversation)
+  * [Misc](#misc)
+    + [Changing the Logging Level](#changing-the-logging-level)
+    + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
+- [Copyright](#copyright)
+
+*Table of contents generated with [markdown-toc](http://ecotrust-canada.github.io/markdown-toc).*
+
 ## Features:
  - Log in with token
  - Download bot list

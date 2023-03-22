@@ -153,6 +153,8 @@ class Client:
       "source": None,
       "withChatBreak": with_chat_break
     })
+    if not message_data["data"]["messageCreateWithStatus"]["messageLimit"]["canSend"]:
+      raise RuntimeError(f"Daily limit reached for {chatbot}.")
 
     last_text = ""
     message_id = None
