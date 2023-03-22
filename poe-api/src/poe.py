@@ -155,17 +155,20 @@ class Client:
     })
 
     last_text = ""
+    message_id = None
     while True:
       data = json.loads(ws.recv())
       message = json.loads(data["messages"][0])["payload"]["data"]["messageAdded"]
+      
       if message["state"] == "complete":
-        if last_text:
+        if last_text and message["messageId"] == message_id:
           break
         else:
           continue
 
       message["text_new"] = message["text"][len(last_text):]
       last_text = message["text"]
+      message_id = message["messageId"]
 
       yield message
     

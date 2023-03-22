@@ -12,7 +12,7 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
  - Clear conversation context
  - Download conversation history
  - Delete messages
- - Purge messages from conversation
+ - Purge an entire conversation
 
 ## Installation:
 You can install this library by running the following command:
@@ -122,7 +122,7 @@ client.delete([96105719, 96097108, 96097078, 96084421, 96084402])
 #### Purging a Conversation:
 To purge an entire conversation, or just the last few messages, you can use the `client.purge_messages` function. This function accepts the following arguments:
  - `chatbot` - The codename of the chatbot.
- - `count = None` - The number of messages to be deleted, starting from the latest one. The default behavior is to delete every single message.
+ - `count = -1` - The number of messages to be deleted, starting from the latest one. The default behavior is to delete every single message.
 
 ```python
 #purge just the last 10 messages
@@ -138,6 +138,7 @@ If you want to show debug messages, simply call `poe.logger.setLevel`.
 
 ```python
 import poe
+import logging
 poe.logger.setLevel(logging.INFO)
 ```
 
