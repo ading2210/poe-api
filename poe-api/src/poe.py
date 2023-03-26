@@ -1,4 +1,4 @@
-import requests, re, json, random, logging
+import requests, re, json, random, logging, time, queue, threading
 import websocket
 from pathlib import Path
 
@@ -44,6 +44,9 @@ class Client:
   formkey = ""
   next_data = {}
   bots = {}
+  active_messages = {}
+  message_queues = {}
+  ws_connected = False
   
   def __init__(self, token):
     self.session = requests.Session()
@@ -59,6 +62,8 @@ class Client:
     self.session.headers.update(self.headers)
     self.next_data = self.get_next_data()
     self.channel = self.get_channel_data()
+    self.connect_ws()
+
     self.bots = self.get_bots()
     self.bot_names = self.get_bot_names()
 
@@ -69,6 +74,10 @@ class Client:
     self.gql_headers = {**self.gql_headers, **self.headers}
 
     self.subscribe()
+
+    #wait for the websocket to connect if it has not done so
+    while not self.ws_connected:
+      time.sleep(0.01)
     
   def get_next_data(self):
     logger.info("Downloading next_data...")
@@ -110,7 +119,7 @@ class Client:
   
   def get_channel_data(self, channel=None):
     logger.info("Downloading channel data...")
-    r = self.session.get(self.settings_url)
+    r = request_with_retries(self.session.get, self.settings_url)
     data = r.json()
 
     self.formkey = data["formkey"]
@@ -123,9 +132,18 @@ class Client:
     return f'wss://{self.ws_domain}.tch.{channel["baseHost"]}/up/{channel["boxName"]}/updates'+query
 
   def send_query(self, query_name, variables):
-    payload = generate_payload(query_name, variables)
-    r = self.session.post(self.gql_url, json=payload, headers=self.gql_headers)
-    return r.json()
+    for i in range(20):
+      payload = generate_payload(query_name, variables)
+      r = request_with_retries(self.session.post, self.gql_url, json=payload, headers=self.gql_headers)
+      data = r.json()
+      if data["data"] == None:
+        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20)')
+        time.sleep(2)
+        continue
+
+      return r.json()
+    
+    raise RuntimeError(f'{query_name} failed too many times.')
   
   def subscribe(self):
     result = self.send_query("SubscriptionsMutation", {
@@ -141,9 +159,45 @@ class Client:
       ]
     })
   
+  def connect_ws(self):
+    self.ws = websocket.WebSocketApp(
+      self.get_websocket_url(), 
+      header={"User-Agent": user_agent},
+      on_message=self.on_message,
+      on_open=self.on_ws_connect,
+    )
+    t = threading.Thread(target=self.ws_thread, daemon=True)
+    t.start()
+
+  def ws_thread(self):
+    self.ws.run_forever(reconnect=1)
+  
+  def on_ws_connect(self, ws):
+    self.ws_connected = True
+
+  def on_message(self, ws, msg):
+    data = json.loads(msg)
+    message = json.loads(data["messages"][0])["payload"]["data"]["messageAdded"]
+
+    copied_dict = self.active_messages.copy()
+    for key, value in copied_dict.items():
+      #add the message to the appropriate queue
+      if value == message["messageId"] and key in self.message_queues:
+        self.message_queues[key].put(message)
+        return
+
+      #indicate that the response id is tied to the human message id
+      elif key != "pending" and value == None and message["state"] != "complete":
+        self.active_messages[key] = message["messageId"]
+        self.message_queues[key].put(message)
+
   def send_message(self, chatbot, message, with_chat_break=False):
-    ws = websocket.WebSocket()
-    ws.connect(self.get_websocket_url(), header={"User-Agent": user_agent})
+    #if there is another active message, wait until it has finished sending
+    while None in self.active_messages.values():
+      time.sleep(0.01)
+    
+    #None indicates that a message is still being sent
+    self.active_messages["pending"] = None 
 
     logger.info(f"Sending message to {chatbot}: {message}")
     message_data = self.send_query("AddHumanMessageMutation", {
@@ -153,28 +207,41 @@ class Client:
       "source": None,
       "withChatBreak": with_chat_break
     })
-    if not message_data["data"]["messageCreateWithStatus"]["messageLimit"]["canSend"]:
+    try:
+      human_message = message_data["data"]["messageCreateWithStatus"]
+      human_message_id = human_message["message"]["messageId"]
+    except TypeError:
+      raise RuntimeError(message_data)
+
+    if not human_message["messageLimit"]["canSend"]:
       raise RuntimeError(f"Daily limit reached for {chatbot}.")
+
+    #indicate that the current message is waiting for a response
+    del self.active_messages["pending"]
+    self.active_messages[human_message_id] = None
+    self.message_queues[human_message_id] = queue.Queue()
 
     last_text = ""
     message_id = None
     while True:
-      data = json.loads(ws.recv())
-      message = json.loads(data["messages"][0])["payload"]["data"]["messageAdded"]
+      message = self.message_queues[human_message_id].get()
       
+      #only break when the message is marked as complete
       if message["state"] == "complete":
         if last_text and message["messageId"] == message_id:
           break
         else:
           continue
-
+      
+      #update info about response
       message["text_new"] = message["text"][len(last_text):]
       last_text = message["text"]
       message_id = message["messageId"]
 
       yield message
     
-    ws.close()
+    del self.active_messages[human_message_id]
+    del self.message_queues[human_message_id]
   
   def send_chat_break(self, chatbot):
     logger.info(f"Sending chat break to {chatbot}")
@@ -203,7 +270,7 @@ class Client:
   
   def purge_conversation(self, chatbot, count=-1):
     logger.info(f"Purging messages from {chatbot}")
-    last_messages = self.get_message_history(chatbot)[::-1]
+    last_messages = self.get_message_history(chatbot, count=50)[::-1]
     while last_messages:
       message_ids = []
       for message in last_messages:
@@ -212,10 +279,11 @@ class Client:
         count -= 1  
         message_ids.append(message["node"]["messageId"])
 
-      self.delete_message(message_ids)      
+      self.delete_message(message_ids)
+            
       if count == 0:
         return
-      last_messages = self.get_message_history(chatbot)[::-1]
+      last_messages = self.get_message_history(chatbot, count=50)[::-1]
     logger.info(f"No more messages left to delete.")
 
 load_queries()

@@ -85,6 +85,8 @@ for chunk in client.send_message("capybara", message):
 print(chunk["text"])
 ```
 
+You can also send multiple messages in parallel using `threading` and recieve their responses seperately, as demonstrated in `/examples/parallel_messages.py`.
+
 #### Clearing the Conversation Context:
 If you want to clear the the context of a conversation without sending a message, you can use `client.send_chat_break`. The only argument is the codename of the bot whose context will be cleared.
 
@@ -138,7 +140,7 @@ client.delete([96105719, 96097108, 96097078, 96084421, 96084402])
 ```
 
 #### Purging a Conversation:
-To purge an entire conversation, or just the last few messages, you can use the `client.purge_messages` function. This function accepts the following arguments:
+To purge an entire conversation, or just the last few messages, you can use the `client.purge_conversation` function. This function accepts the following arguments:
  - `chatbot` - The codename of the chatbot.
  - `count = -1` - The number of messages to be deleted, starting from the latest one. The default behavior is to delete every single message.
 
