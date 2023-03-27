@@ -5,20 +5,23 @@
 This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Antropic's Claude.
 
 ## Table of Contents:
-- [Features](#features)
-- [Installation](#installation)
-- [Documentation](#documentation)
-  * [Using the Client](#using-the-client)
-    + [Downloading the Available Bots](#downloading-the-available-bots)
-    + [Sending Messages](#sending-messages)
-    + [Clearing the Conversation Context](#clearing-the-conversation-context)
-    + [Downloading Conversation History](#downloading-conversation-history)
-    + [Deleting Messages](#deleting-messages)
-    + [Purging a Conversation](#purging-a-conversation)
-  * [Misc](#misc)
-    + [Changing the Logging Level](#changing-the-logging-level)
-    + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
-- [Copyright](#copyright)
+- [Table of Contents:](#table-of-contents)
+- [Features:](#features)
+- [Installation:](#installation)
+- [Documentation:](#documentation)
+  * [Finding Your Token:](#finding-your-token)
+  * [Using the Client:](#using-the-client)
+    + [Downloading the Available Bots:](#downloading-the-available-bots)
+    + [Sending Messages:](#sending-messages)
+    + [Clearing the Conversation Context:](#clearing-the-conversation-context)
+    + [Downloading Conversation History:](#downloading-conversation-history)
+    + [Deleting Messages:](#deleting-messages)
+    + [Purging a Conversation:](#purging-a-conversation)
+  * [Misc:](#misc)
+    + [Changing the Logging Level:](#changing-the-logging-level)
+    + [Setting a Custom User-Agent:](#setting-a-custom-user-agent)
+- [Copyright:](#copyright)
+  * [Copyright Notice:](#copyright-notice)
 
 *Table of contents generated with [markdown-toc](http://ecotrust-canada.github.io/markdown-toc).*
 
@@ -44,8 +47,14 @@ Examples can be found in the `/examples` directory. To run these examples, pass 
 python3 examples/temporary_message.py "TOKEN_HERE"
 ```
 
+### Finding Your Token:
+Log into poe.com on any web browser, then open your browser's developer tools (also known as "inspect") and look for the value of the `p-b` cookie in the following menus:
+ - Chromium: Devtools > Application > Cookies
+ - Firefox: Devtools > Storage > Cookies
+ - Safari: Devtools > Storage > Cookies
+
 ### Using the Client:
-To use this library, simply import `poe` and create a `poe.Client` instance, passing in your token as the only argument. You can find your token in the `p-b` field in your browser's cookies. 
+To use this library, simply import `poe` and create a `poe.Client` instance, passing in your token as the only argument.
 
 ```python
 import poe
@@ -87,7 +96,7 @@ for chunk in client.send_message("capybara", message):
 print(chunk["text"])
 ```
 
-You can also send multiple messages in parallel using `threading` and recieve their responses seperately, as demonstrated in `/examples/parallel_messages.py`.
+You can also send multiple messages in parallel using `threading` and recieve their responses seperately, as demonstrated in `/examples/parallel_messages.py`. Note that if you send messages too fast, the server will give an error, but the request will eventually succeed.
 
 #### Clearing the Conversation Context:
 If you want to clear the the context of a conversation without sending a message, you can use `client.send_chat_break`. The only argument is the codename of the bot whose context will be cleared.
