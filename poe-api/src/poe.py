@@ -46,6 +46,7 @@ class Client:
   bots = {}
   active_messages = {}
   message_queues = {}
+  ws = None
   ws_connected = False
   
   def __init__(self, token):
@@ -62,8 +63,6 @@ class Client:
     self.session.headers.update(self.headers)
     self.next_data = self.get_next_data()
     self.channel = self.get_channel_data()
-    self.connect_ws()
-
     self.bots = self.get_bots()
     self.bot_names = self.get_bot_names()
 
@@ -72,12 +71,7 @@ class Client:
       "poe-tchannel": self.channel["channel"],
     }
     self.gql_headers = {**self.gql_headers, **self.headers}
-
     self.subscribe()
-
-    #wait for the websocket to connect if it has not done so
-    while not self.ws_connected:
-      time.sleep(0.01)
     
   def get_next_data(self):
     logger.info("Downloading next_data...")
@@ -146,6 +140,7 @@ class Client:
     raise RuntimeError(f'{query_name} failed too many times.')
   
   def subscribe(self):
+    logger.info("Subscribing to mutations")
     result = self.send_query("SubscriptionsMutation", {
       "subscriptions": [
         {
@@ -166,11 +161,15 @@ class Client:
       on_message=self.on_message,
       on_open=self.on_ws_connect,
     )
-    t = threading.Thread(target=self.ws_thread, daemon=True)
+    t = threading.Thread(target=self.ws.run_forever, daemon=True)
     t.start()
-
-  def ws_thread(self):
-    self.ws.run_forever(reconnect=1)
+    while not self.ws_connected:
+      time.sleep(0.01)
+  
+  def disconnect_ws(self):
+    if self.ws:
+      self.ws.close()
+    self.ws_connected = False
   
   def on_ws_connect(self, ws):
     self.ws_connected = True
@@ -196,10 +195,17 @@ class Client:
     while None in self.active_messages.values():
       time.sleep(0.01)
     
-    #None indicates that a message is still being sent
-    self.active_messages["pending"] = None 
-
     logger.info(f"Sending message to {chatbot}: {message}")
+
+    #automatically reconnect if there are no ongoing messages
+    if not self.active_messages:
+      self.active_messages["pending"] = None 
+      self.disconnect_ws()
+      self.connect_ws()
+    else:
+      #None indicates that a message is still in progress
+      self.active_messages["pending"] = None 
+
     message_data = self.send_query("AddHumanMessageMutation", {
       "bot": chatbot,
       "query": message,
@@ -224,7 +230,7 @@ class Client:
     last_text = ""
     message_id = None
     while True:
-      message = self.message_queues[human_message_id].get()
+      message = self.message_queues[human_message_id].get(timeout=10)
       
       #only break when the message is marked as complete
       if message["state"] == "complete":

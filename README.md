@@ -62,6 +62,8 @@ print(client.bot_names)
 #{'capybara': 'Sage', 'beaver': 'GPT-4', 'a2_2': 'Claude+', 'a2': 'Claude', 'chinchilla': 'ChatGPT', 'nutria': 'Dragonfly'}
 ```
 
+Note that Claude+ (a2_2) and GPT-4 (beaver) both have a rate limit of 1 message per day on free accounts. For all the other chatbots, there doesn't seem to be any rate limit. 
+
 #### Sending Messages:
 You can use the `poe.Client.send_message` function to send a message to a chatbot, which accepts the following arguments:
  - `chatbot` - The codename of the chatbot. (example: `capybara`)
@@ -174,3 +176,22 @@ poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, lik
 This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). All code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
 
 Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
+
+### Copyright Notice:
+```
+ading2210/poe-api: a reverse-engineered Python API wrapepr for Quora's Poe
+Copyright (C) 2023 ading2210
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
