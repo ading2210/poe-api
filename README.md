@@ -5,28 +5,29 @@
 This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Antropic's Claude.
 
 ## Table of Contents:
-- [Table of Contents:](#table-of-contents)
-- [Features:](#features)
-- [Installation:](#installation)
-- [Documentation:](#documentation)
-  * [Finding Your Token:](#finding-your-token)
-  * [Using the Client:](#using-the-client)
-    + [Downloading the Available Bots:](#downloading-the-available-bots)
-    + [Sending Messages:](#sending-messages)
-    + [Clearing the Conversation Context:](#clearing-the-conversation-context)
-    + [Downloading Conversation History:](#downloading-conversation-history)
-    + [Deleting Messages:](#deleting-messages)
-    + [Purging a Conversation:](#purging-a-conversation)
-  * [Misc:](#misc)
-    + [Changing the Logging Level:](#changing-the-logging-level)
-    + [Setting a Custom User-Agent:](#setting-a-custom-user-agent)
-- [Copyright:](#copyright)
-  * [Copyright Notice:](#copyright-notice)
+- [Table of Contents](#table-of-contents)
+- [Features](#features)
+- [Installation](#installation)
+- [Documentation](#documentation)
+  * [Finding Your Token](#finding-your-token)
+  * [Using the Client](#using-the-client)
+    + [Downloading the Available Bots](#downloading-the-available-bots)
+    + [Sending Messages](#sending-messages)
+    + [Clearing the Conversation Context](#clearing-the-conversation-context)
+    + [Downloading Conversation History](#downloading-conversation-history)
+    + [Deleting Messages](#deleting-messages)
+    + [Purging a Conversation](#purging-a-conversation)
+  * [Misc](#misc)
+    + [Changing the Logging Level](#changing-the-logging-level)
+    + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
+- [Copyright](#copyright)
+  * [Copyright Notice](#copyright-notice)
 
 *Table of contents generated with [markdown-toc](http://ecotrust-canada.github.io/markdown-toc).*
 
 ## Features:
  - Log in with token
+ - Proxy requests + websocket
  - Download bot list
  - Send messages
  - Stream bot responses
@@ -48,17 +49,26 @@ python3 examples/temporary_message.py "TOKEN_HERE"
 ```
 
 ### Finding Your Token:
-Log into poe.com on any web browser, then open your browser's developer tools (also known as "inspect") and look for the value of the `p-b` cookie in the following menus:
+Log into [Poe](https://poe.com) on any web browser, then open your browser's developer tools (also known as "inspect") and look for the value of the `p-b` cookie in the following menus:
  - Chromium: Devtools > Application > Cookies
  - Firefox: Devtools > Storage > Cookies
  - Safari: Devtools > Storage > Cookies
 
 ### Using the Client:
-To use this library, simply import `poe` and create a `poe.Client` instance, passing in your token as the only argument.
+To use this library, simply import `poe` and create a `poe.Client` instance. The Client class accepts the following arguments:
+ - `token` - The token to use. 
+ - `proxy = None` - The proxy to use, in the format `protocol://host:port`. The socks5/socks4 protocol is reccommended.
 
+Regular Example:
 ```python
 import poe
 client = poe.Client("TOKEN_HERE")
+```
+
+Proxied Example:
+```python
+import poe
+client = poe.Client("TOKEN_HERE", proxy="socks5://178.62.100.151:59166")
 ```
 
 Note that the following examples assume `client` is the name of your `poe.Client` instance. If the token is invalid, a RuntimeError will be raised.

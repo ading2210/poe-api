@@ -1,6 +1,7 @@
 import requests, re, json, random, logging, time, queue, threading
 import websocket
 from pathlib import Path
+from urllib.parse import urlparse
 
 parent_path = Path(__file__).resolve().parent
 queries_path = parent_path / "poe_graphql"
@@ -49,8 +50,16 @@ class Client:
   ws = None
   ws_connected = False
   
-  def __init__(self, token):
+  def __init__(self, token, proxy=None):
+    self.proxy = proxy
     self.session = requests.Session()
+        
+    if proxy:
+      self.session.proxies = {
+        "http": self.proxy,
+        "https": self.proxy
+      }
+      logger.info(f"Proxy enabled: {self.proxy}")
 
     self.session.cookies.set("p-b", token, domain="poe.com")
     self.headers = {
@@ -63,6 +72,7 @@ class Client:
     self.session.headers.update(self.headers)
     self.next_data = self.get_next_data()
     self.channel = self.get_channel_data()
+    self.connect_ws()
     self.bots = self.get_bots()
     self.bot_names = self.get_bot_names()
 
@@ -154,14 +164,27 @@ class Client:
       ]
     })
   
+  def ws_run_thread(self):
+    kwargs = {}
+    if self.proxy:
+      proxy_parsed = urlparse(self.proxy)
+      kwargs = {
+        "proxy_type": proxy_parsed.scheme,
+        "http_proxy_host": proxy_parsed.hostname,
+        "http_proxy_port": proxy_parsed.port
+      }
+
+    self.ws.run_forever(**kwargs)
+
   def connect_ws(self):
     self.ws = websocket.WebSocketApp(
       self.get_websocket_url(), 
       header={"User-Agent": user_agent},
       on_message=self.on_message,
       on_open=self.on_ws_connect,
+      on_error=self.on_ws_error
     )
-    t = threading.Thread(target=self.ws.run_forever, daemon=True)
+    t = threading.Thread(target=self.ws_run_thread, daemon=True)
     t.start()
     while not self.ws_connected:
       time.sleep(0.01)
@@ -173,6 +196,11 @@ class Client:
   
   def on_ws_connect(self, ws):
     self.ws_connected = True
+  
+  def on_ws_error(self, ws, error):
+    logger.warn(f"Websocket returned error: {error}")
+    self.disconnect_ws()
+    self.connect_ws()
 
   def on_message(self, ws, msg):
     data = json.loads(msg)
@@ -194,17 +222,11 @@ class Client:
     #if there is another active message, wait until it has finished sending
     while None in self.active_messages.values():
       time.sleep(0.01)
-    
-    logger.info(f"Sending message to {chatbot}: {message}")
 
-    #automatically reconnect if there are no ongoing messages
-    if not self.active_messages:
-      self.active_messages["pending"] = None 
-      self.disconnect_ws()
-      self.connect_ws()
-    else:
-      #None indicates that a message is still in progress
-      self.active_messages["pending"] = None 
+    #None indicates that a message is still in progress
+    self.active_messages["pending"] = None
+
+    logger.info(f"Sending message to {chatbot}: {message}")
 
     message_data = self.send_query("AddHumanMessageMutation", {
       "bot": chatbot,
@@ -230,7 +252,7 @@ class Client:
     last_text = ""
     message_id = None
     while True:
-      message = self.message_queues[human_message_id].get(timeout=10)
+      message = self.message_queues[human_message_id].get(timeout=20)
       
       #only break when the message is marked as complete
       if message["state"] == "complete":
