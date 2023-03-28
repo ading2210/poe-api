@@ -218,7 +218,7 @@ class Client:
         self.active_messages[key] = message["messageId"]
         self.message_queues[key].put(message)
 
-  def send_message(self, chatbot, message, with_chat_break=False):
+  def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
     #if there is another active message, wait until it has finished sending
     while None in self.active_messages.values():
       time.sleep(0.01)
@@ -252,7 +252,12 @@ class Client:
     last_text = ""
     message_id = None
     while True:
-      message = self.message_queues[human_message_id].get(timeout=20)
+      try:
+        message = self.message_queues[human_message_id].get(timeout=timeout)
+      except queue.Empty:
+        del self.active_messages[human_message_id]
+        del self.message_queues[human_message_id]
+        raise RuntimeError("Response timed out.")
       
       #only break when the message is marked as complete
       if message["state"] == "complete":

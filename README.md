@@ -121,6 +121,7 @@ To download past messages in a conversation, use the `client.get_message_history
  - `chatbot` - The codename of the chatbot.
  - `count = 25` - The number of messages to download.
  - `cursor = None` - The message ID to start at instead of the latest one.
+ - `timeout = 20` - The max number of seconds in between messages until a `RuntimeError` is raised. 
 
 ```python
 message_history = client.get_message_history("capybara", count=10)
@@ -154,10 +155,10 @@ To delete messages, use the `client.delete_message` function, which accepts a si
 
 ```python
 #delete a single message
-client.delete(96105719)
+client.delete_message(96105719)
 
 #delete multiple messages at once
-client.delete([96105719, 96097108, 96097078, 96084421, 96084402])
+client.delete_message([96105719, 96097108, 96097078, 96084421, 96084402])
 ```
 
 #### Purging a Conversation:
@@ -198,7 +199,7 @@ Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/
 
 ### Copyright Notice:
 ```
-ading2210/poe-api: a reverse-engineered Python API wrapepr for Quora's Poe
+ading2210/poe-api: a reverse engineered Python API wrapepr for Quora's Poe
 Copyright (C) 2023 ading2210
 
 This program is free software: you can redistribute it and/or modify
