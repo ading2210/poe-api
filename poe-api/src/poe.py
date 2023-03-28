@@ -235,17 +235,17 @@ class Client:
       "source": None,
       "withChatBreak": with_chat_break
     })
+    del self.active_messages["pending"]
+    
+    if not message_data["data"]["messageCreateWithStatus"]["messageLimit"]["canSend"]:
+      raise RuntimeError(f"Daily limit reached for {chatbot}.")
     try:
       human_message = message_data["data"]["messageCreateWithStatus"]
       human_message_id = human_message["message"]["messageId"]
     except TypeError:
-      raise RuntimeError(message_data)
-
-    if not human_message["messageLimit"]["canSend"]:
-      raise RuntimeError(f"Daily limit reached for {chatbot}.")
+      raise RuntimeError(f"An unknown error occured. Raw response data: {message_data}")
 
     #indicate that the current message is waiting for a response
-    del self.active_messages["pending"]
     self.active_messages[human_message_id] = None
     self.message_queues[human_message_id] = queue.Queue()
 

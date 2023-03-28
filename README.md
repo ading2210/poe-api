@@ -50,7 +50,7 @@ python3 examples/temporary_message.py "TOKEN_HERE"
 
 ### Finding Your Token:
 Log into [Poe](https://poe.com) on any web browser, then open your browser's developer tools (also known as "inspect") and look for the value of the `p-b` cookie in the following menus:
- - Chromium: Devtools > Application > Cookies
+ - Chromium: Devtools > Application > Cookies > poe.com
  - Firefox: Devtools > Storage > Cookies
  - Safari: Devtools > Storage > Cookies
 
@@ -88,6 +88,7 @@ You can use the `poe.Client.send_message` function to send a message to a chatbo
  - `chatbot` - The codename of the chatbot. (example: `capybara`)
  - `message` - The message to send to the chatbot.
  - `with_chat_break = False` - Whether the conversation context should be cleared.
+ - `timeout = 20` - The max number of seconds in between recieved chunks until a `RuntimeError` is raised. 
 
 The function is a generator which returns the most recent version of the generated message whenever it is updated.
 
@@ -121,7 +122,6 @@ To download past messages in a conversation, use the `client.get_message_history
  - `chatbot` - The codename of the chatbot.
  - `count = 25` - The number of messages to download.
  - `cursor = None` - The message ID to start at instead of the latest one.
- - `timeout = 20` - The max number of seconds in between messages until a `RuntimeError` is raised. 
 
 ```python
 message_history = client.get_message_history("capybara", count=10)
@@ -185,7 +185,7 @@ poe.logger.setLevel(logging.INFO)
 ```
 
 #### Setting a Custom User-Agent:
-If you want to change the user-agent that is being spoofed, set `poe.user_agent`.
+If you want to change the user-agent that is being spoofed, set `poe.user_agent` after importing the library. 
 
 ```python
 import poe
