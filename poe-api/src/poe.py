@@ -299,6 +299,16 @@ class Client:
 
   def get_message_history(self, chatbot, count=25, cursor=None):
     logger.info(f"Downloading {count} messages from {chatbot}")
+    cursor = str(cursor)
+    if count > 50:
+      messages = self.get_message_history(chatbot, count=50, cursor=cursor)
+      while count > 0:
+        new_cursor = messages[0]["cursor"]
+        new_messages = self.get_message_history(chatbot, min(50, count), cursor=new_cursor)
+        messages = new_messages + messages
+        count -= 50
+      return messages
+      
     result = self.send_query("ChatListPaginationQuery", {
       "count": count,
       "cursor": cursor,

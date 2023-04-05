@@ -5,7 +5,6 @@
 This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Antropic's Claude.
 
 ## Table of Contents:
-- [Table of Contents](#table-of-contents)
 - [Features](#features)
 - [Installation](#installation)
 - [Documentation](#documentation)
@@ -74,17 +73,17 @@ client = poe.Client("TOKEN_HERE", proxy="socks5://178.62.100.151:59166")
 Note that the following examples assume `client` is the name of your `poe.Client` instance. If the token is invalid, a RuntimeError will be raised.
 
 #### Downloading the Available Bots:
-The client downloads all of the available bots upon initialization and stores them within `poe.Client.bots`. A dictionary that maps bot codenames to their display names can be found at `poe.Client.bot_names`. If you want to refresh these values, you can call `poe.Client.get_bots`.
+The client downloads all of the available bots upon initialization and stores them within `client.bots`. A dictionary that maps bot codenames to their display names can be found at `client.bot_names`. If you want to refresh these values, you can call `client.get_bots`.
 
 ```python
 print(client.bot_names)
 #{'capybara': 'Sage', 'beaver': 'GPT-4', 'a2_2': 'Claude+', 'a2': 'Claude', 'chinchilla': 'ChatGPT', 'nutria': 'Dragonfly'}
 ```
 
-Note that Claude+ (a2_2) and GPT-4 (beaver) both have a rate limit of 1 message per day on free accounts. For all the other chatbots, there doesn't seem to be any rate limit. 
+Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. For all the other chatbots, there doesn't seem to be any rate limit. 
 
 #### Sending Messages:
-You can use the `poe.Client.send_message` function to send a message to a chatbot, which accepts the following arguments:
+You can use the `client.send_message` function to send a message to a chatbot, which accepts the following arguments:
  - `chatbot` - The codename of the chatbot. (example: `capybara`)
  - `message` - The message to send to the chatbot.
  - `with_chat_break = False` - Whether the conversation context should be cleared.
@@ -122,6 +121,8 @@ To download past messages in a conversation, use the `client.get_message_history
  - `chatbot` - The codename of the chatbot.
  - `count = 25` - The number of messages to download.
  - `cursor = None` - The message ID to start at instead of the latest one.
+
+The returned messages are ordered from oldest to newest. 
 
 ```python
 message_history = client.get_message_history("capybara", count=10)
