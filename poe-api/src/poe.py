@@ -182,7 +182,8 @@ class Client:
       header={"User-Agent": user_agent},
       on_message=self.on_message,
       on_open=self.on_ws_connect,
-      on_error=self.on_ws_error
+      on_error=self.on_ws_error,
+      on_close=self.on_ws_close
     )
     t = threading.Thread(target=self.ws_run_thread, daemon=True)
     t.start()
@@ -198,7 +199,8 @@ class Client:
     self.ws_connected = True
   
   def on_ws_close(self, ws, close_status_code):
-    print(close_status_code)
+    self.ws_connected = False
+    logger.warn(f"Websocket closed with status {close_status_code}")
   
   def on_ws_error(self, ws, error):
     self.disconnect_ws()
@@ -244,7 +246,10 @@ class Client:
     self.active_messages["pending"] = None
 
     logger.info(f"Sending message to {chatbot}: {message}")
-
+    #reconnect websocket
+    if not self.ws_connected:
+      self.disconnect_ws()
+      self.connect_ws()
     message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,
       "query": message,
