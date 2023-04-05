@@ -197,6 +197,9 @@ class Client:
   def on_ws_connect(self, ws):
     self.ws_connected = True
   
+  def on_ws_close(self, ws, close_status_code):
+    print(close_status_code)
+  
   def on_ws_error(self, ws, error):
     self.disconnect_ws()
     self.connect_ws()
@@ -242,7 +245,7 @@ class Client:
 
     logger.info(f"Sending message to {chatbot}: {message}")
 
-    message_data = self.send_query("AddHumanMessageMutation", {
+    message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,
       "query": message,
       "chatId": self.bots[chatbot]["chatId"],
@@ -251,11 +254,11 @@ class Client:
     })
     del self.active_messages["pending"]
     
-    if not message_data["data"]["messageCreateWithStatus"]["messageLimit"]["canSend"]:
+    if not message_data["data"]["messageEdgeCreate"]["message"]:
       raise RuntimeError(f"Daily limit reached for {chatbot}.")
     try:
-      human_message = message_data["data"]["messageCreateWithStatus"]
-      human_message_id = human_message["message"]["messageId"]
+      human_message = message_data["data"]["messageEdgeCreate"]["message"]
+      human_message_id = human_message["node"]["messageId"]
     except TypeError:
       raise RuntimeError(f"An unknown error occured. Raw response data: {message_data}")
 
