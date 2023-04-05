@@ -1,4 +1,4 @@
-import requests, re, json, random, logging, time, queue, threading
+import requests, re, json, random, logging, time, queue, threading, traceback
 import websocket
 from pathlib import Path
 from urllib.parse import urlparse
@@ -198,25 +198,39 @@ class Client:
     self.ws_connected = True
   
   def on_ws_error(self, ws, error):
-    logger.warn(f"Websocket returned error: {error}")
     self.disconnect_ws()
     self.connect_ws()
 
   def on_message(self, ws, msg):
-    data = json.loads(msg)
-    message = json.loads(data["messages"][0])["payload"]["data"]["messageAdded"]
+    try:
+      data = json.loads(msg)
 
-    copied_dict = self.active_messages.copy()
-    for key, value in copied_dict.items():
-      #add the message to the appropriate queue
-      if value == message["messageId"] and key in self.message_queues:
-        self.message_queues[key].put(message)
+      if not "messages" in data:
         return
 
-      #indicate that the response id is tied to the human message id
-      elif key != "pending" and value == None and message["state"] != "complete":
-        self.active_messages[key] = message["messageId"]
-        self.message_queues[key].put(message)
+      for message_str in data["messages"]:
+        message_data = json.loads(message_str)
+        if message_data["message_type"] != "subscriptionUpdate":
+          continue
+        message = message_data["payload"]["data"]["messageAdded"]
+
+        copied_dict = self.active_messages.copy()
+        for key, value in copied_dict.items():
+          #add the message to the appropriate queue
+          if value == message["messageId"] and key in self.message_queues:
+            self.message_queues[key].put(message)
+            return
+
+          #indicate that the response id is tied to the human message id
+          elif key != "pending" and value == None and message["state"] != "complete":
+            self.active_messages[key] = message["messageId"]
+            self.message_queues[key].put(message)
+            return
+
+    except Exception:
+      logger.error(traceback.format_exc())
+      self.disconnect_ws()
+      self.connect_ws()
 
   def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
     #if there is another active message, wait until it has finished sending
