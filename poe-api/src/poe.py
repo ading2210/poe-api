@@ -96,6 +96,16 @@ class Client:
     
     return next_data
   
+  def get_bot(self, display_name):
+    url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{display_name}.json'
+    logger.info("Downloading "+url)
+    
+    r = request_with_retries(self.session.get, url)
+
+    chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
+    return chat_data
+    
+
   def get_bots(self):
     viewer = self.next_data["props"]["pageProps"]["payload"]["viewer"]
     if not "availableBots" in viewer:
@@ -104,12 +114,7 @@ class Client:
 
     bots = {}
     for bot in bot_list:
-      url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{bot["displayName"].lower()}.json'
-      logger.info("Downloading "+url)
-      
-      r = request_with_retries(self.session.get, url)
-
-      chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
+      chat_data = self.get_bot(bot["displayName"].lower())
       bots[chat_data["defaultBotObject"]["nickname"]] = chat_data
           
     return bots
@@ -307,6 +312,13 @@ class Client:
 
   def get_message_history(self, chatbot, count=25, cursor=None):
     logger.info(f"Downloading {count} messages from {chatbot}")
+
+    if cursor == None:
+      chat_data = self.get_bot(self.bot_names[chatbot])
+      if not chat_data["messagesConnection"]["edges"]:
+        return []
+      cursor = chat_data["messagesConnection"]["edges"][-1]["cursor"]
+
     cursor = str(cursor)
     if count > 50:
       messages = self.get_message_history(chatbot, count=50, cursor=cursor)
