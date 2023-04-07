@@ -203,9 +203,9 @@ class Client:
   def on_ws_connect(self, ws):
     self.ws_connected = True
   
-  def on_ws_close(self, ws, close_status_code):
+  def on_ws_close(self, ws, close_status_code, close_message):
     self.ws_connected = False
-    logger.warn(f"Websocket closed with status {close_status_code}")
+    logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
   
   def on_ws_error(self, ws, error):
     self.disconnect_ws()
