@@ -188,7 +188,7 @@ class Client:
       on_message=self.on_message,
       on_open=self.on_ws_connect,
       on_error=self.on_ws_error,
-      on_close=self.on_ws_close
+      on_close=self.on_ws_close_wrapper
     )
     t = threading.Thread(target=self.ws_run_thread, daemon=True)
     t.start()
@@ -206,7 +206,10 @@ class Client:
   def on_ws_close(self, ws, close_status_code):
     self.ws_connected = False
     logger.warn(f"Websocket closed with status {close_status_code}")
-  
+
+  def on_ws_close_wrapper(self, ws, close_status_code, close_msg):
+    self.on_ws_close(ws, close_status_code)
+
   def on_ws_error(self, ws, error):
     self.disconnect_ws()
     self.connect_ws()
