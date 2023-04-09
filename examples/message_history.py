@@ -7,7 +7,7 @@ import sys
 token = sys.argv[1]
 client = poe.Client(token)
 
-message_history = client.get_message_history("capybara", count=10)
+message_history = client.get_message_history("capybara", count=50)
 print(f"Last {len(message_history)} messages:")
 for message in message_history:
   node = message["node"]

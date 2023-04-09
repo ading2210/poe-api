@@ -73,14 +73,15 @@ client = poe.Client("TOKEN_HERE", proxy="socks5://178.62.100.151:59166")
 Note that the following examples assume `client` is the name of your `poe.Client` instance. If the token is invalid, a RuntimeError will be raised.
 
 #### Downloading the Available Bots:
-The client downloads all of the available bots upon initialization and stores them within `client.bots`. A dictionary that maps bot codenames to their display names can be found at `client.bot_names`. If you want to refresh these values, you can call `client.get_bots`.
+The client downloads all of the available bots upon initialization and stores them within `client.bots`. A dictionary that maps bot codenames to their display names can be found at `client.bot_names`. If you want to refresh these values, you can call `client.get_bots`. This function takes the following arguments:
+ - `download_next_data = True` - Whether or not to redownload the `__NEXT_DATA__`, which is required if the bot list has changed. 
 
 ```python
 print(client.bot_names)
 #{'capybara': 'Sage', 'beaver': 'GPT-4', 'a2_2': 'Claude+', 'a2': 'Claude', 'chinchilla': 'ChatGPT', 'nutria': 'Dragonfly'}
 ```
 
-Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. For all the other chatbots, there doesn't seem to be any rate limit. 
+Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
 
 #### Sending Messages:
 You can use the `client.send_message` function to send a message to a chatbot, which accepts the following arguments:

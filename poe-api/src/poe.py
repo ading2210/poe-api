@@ -41,14 +41,6 @@ class Client:
   gql_recv_url = "https://poe.com/api/receive_POST"
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
-
-  formkey = ""
-  next_data = {}
-  bots = {}
-  active_messages = {}
-  message_queues = {}
-  ws = None
-  ws_connected = False
   
   def __init__(self, token, proxy=None):
     self.proxy = proxy
@@ -61,6 +53,9 @@ class Client:
       }
       logger.info(f"Proxy enabled: {self.proxy}")
 
+    self.active_messages = {}
+    self.message_queues = {}
+
     self.session.cookies.set("p-b", token, domain="poe.com")
     self.headers = {
       "User-Agent": user_agent,
@@ -70,10 +65,10 @@ class Client:
     self.ws_domain = f"tch{random.randint(1, 1e6)}"
 
     self.session.headers.update(self.headers)
-    self.next_data = self.get_next_data()
+    self.next_data = self.get_next_data(overwrite_vars=True)
     self.channel = self.get_channel_data()
     self.connect_ws()
-    self.bots = self.get_bots()
+    self.bots = self.get_bots(download_next_data=False)
     self.bot_names = self.get_bot_names()
 
     self.gql_headers = {
@@ -83,7 +78,7 @@ class Client:
     self.gql_headers = {**self.gql_headers, **self.headers}
     self.subscribe()
     
-  def get_next_data(self):
+  def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
     
     r = request_with_retries(self.session.get, self.home_url)
@@ -91,8 +86,9 @@ class Client:
     json_text = re.search(json_regex, r.text).group(1)
     next_data = json.loads(json_text)
 
-    self.formkey = next_data["props"]["formkey"]
-    self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
+    if overwrite_vars:
+      self.formkey = next_data["props"]["formkey"]
+      self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
     
     return next_data
   
@@ -105,18 +101,23 @@ class Client:
     chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
     return chat_data
     
+  def get_bots(self, download_next_data=True):
+    if download_next_data:
+      next_data = self.get_next_data()
+    else:
+      next_data = self.next_data
 
-  def get_bots(self):
-    viewer = self.next_data["props"]["pageProps"]["payload"]["viewer"]
-    if not "availableBots" in viewer:
-      raise RuntimeError("Invalid token.")
-    bot_list = viewer["availableBots"]
+    if not "availableBots" in self.viewer:
+      raise RuntimeError("Invalid token or no bots are available.")
+    bot_list = self.viewer["availableBots"]
 
     bots = {}
     for bot in bot_list:
       chat_data = self.get_bot(bot["displayName"])
       bots[chat_data["defaultBotObject"]["nickname"]] = chat_data
-          
+    
+    self.bots = bots
+    self.bot_names = self.get_bot_names()          
     return bots
   
   def get_bot_names(self):
@@ -182,6 +183,7 @@ class Client:
     self.ws.run_forever(**kwargs)
 
   def connect_ws(self):
+    self.ws_connected = False
     self.ws = websocket.WebSocketApp(
       self.get_websocket_url(), 
       header={"User-Agent": user_agent},
@@ -313,28 +315,35 @@ class Client:
   def get_message_history(self, chatbot, count=25, cursor=None):
     logger.info(f"Downloading {count} messages from {chatbot}")
 
+    messages = []
     if cursor == None:
       chat_data = self.get_bot(self.bot_names[chatbot])
       if not chat_data["messagesConnection"]["edges"]:
         return []
-      cursor = chat_data["messagesConnection"]["edges"][-1]["cursor"]
+      messages = chat_data["messagesConnection"]["edges"][:count]
+      cursor = chat_data["messagesConnection"]["pageInfo"]["startCursor"]
+      count -= len(messages)
 
     cursor = str(cursor)
     if count > 50:
-      messages = self.get_message_history(chatbot, count=50, cursor=cursor)
+      messages = self.get_message_history(chatbot, count=50, cursor=cursor) + messages
       while count > 0:
+        count -= 50
         new_cursor = messages[0]["cursor"]
         new_messages = self.get_message_history(chatbot, min(50, count), cursor=new_cursor)
         messages = new_messages + messages
-        count -= 50
       return messages
-      
+    elif count <= 0:
+      return messages
+
     result = self.send_query("ChatListPaginationQuery", {
       "count": count,
       "cursor": cursor,
       "id": self.bots[chatbot]["id"]
     })
-    return result["data"]["node"]["messagesConnection"]["edges"]
+    query_messages = result["data"]["node"]["messagesConnection"]["edges"]
+    messages = query_messages + messages
+    return messages
 
   def delete_message(self, message_ids):
     logger.info(f"Deleting messages: {message_ids}")
