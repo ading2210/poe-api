@@ -9,7 +9,7 @@ long_description = (base_path / "README.md").read_text()
 
 setuptools.setup(
   name="poe-api",
-  version="0.2.9",
+  version="0.2.10",
   author="ading2210",
   license="GPLv3",
   description="A reverse engineered API wrapper for Quora's Poe",

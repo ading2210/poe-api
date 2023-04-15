@@ -145,17 +145,17 @@ class Client:
   def send_query(self, query_name, variables):
     for i in range(20):
       json_data = generate_payload(query_name, variables)
-      payload   = json.dumps(json_data, separators=(',', ':'))
+      payload = json.dumps(json_data, separators=(",", ":"))
       
-      base_string = payload + self.gql_headers['poe-formkey'] + 'WpuLMiXEKKE98j56k'
+      base_string = payload + self.gql_headers["poe-formkey"] + "WpuLMiXEKKE98j56k"
       
-      headers = self.gql_headers | {
-          "content-type": "application/json",
-          "poe-tag-id": hashlib.md5(base_string.encode()).hexdigest()
+      headers = {
+        "content-type": "application/json",
+        "poe-tag-id": hashlib.md5(base_string.encode()).hexdigest()
       }
+      headers = {**self.gql_headers, **headers}
       
-      r = request_with_retries(
-          self.session.post, self.gql_url, data=payload, headers=headers)
+      r = request_with_retries(self.session.post, self.gql_url, data=payload, headers=headers)
       
       data = r.json()
       if data["data"] == None:

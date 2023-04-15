@@ -122,6 +122,8 @@ To download past messages in a conversation, use the `client.get_message_history
  - `chatbot` - The codename of the chatbot.
  - `count = 25` - The number of messages to download.
  - `cursor = None` - The message ID to start at instead of the latest one.
+ 
+Note that if you don't specify a cursor, the client will have to perform an extra request to determine what the latest cursor is.
 
 The returned messages are ordered from oldest to newest. 
 
@@ -195,7 +197,9 @@ poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, lik
 ```
 
 ## Copyright: 
-This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). All code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
+This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). Most code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
+
+Reverse engineering the `poe-tag-id` header has been done by [xtekky](https://github.com/xtekky) in [PR #39](https://github.com/ading2210/poe-api/pull/39).
 
 Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
 
