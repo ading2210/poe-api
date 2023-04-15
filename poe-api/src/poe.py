@@ -79,6 +79,22 @@ class Client:
     self.gql_headers = {**self.gql_headers, **self.headers}
     self.subscribe()
     
+  def extract_formkey(self, html):
+    script_regex = r'<script>if\("undefined"==typeof window\)throw new Error;(.+)</script>'
+    script_text = re.search(script_regex, html).group(1)
+    key_regex = r'var c="([0-9a-f]+)",'
+    key_text = re.search(key_regex, script_text).group(1)
+    cipher_regex = r'e\[(\d+)\]=c\[(\d+)\]'
+    cipher_pairs = re.findall(cipher_regex, script_text)
+
+    formkey_list = [""] * len(cipher_pairs)
+    for pair in cipher_pairs:
+      formkey_index, key_index = map(int, pair)
+      formkey_list[formkey_index] = key_text[key_index]
+    formkey = "".join(formkey_list)
+    
+    return formkey
+
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
     
@@ -88,7 +104,7 @@ class Client:
     next_data = json.loads(json_text)
 
     if overwrite_vars:
-      self.formkey = next_data["props"]["formkey"]
+      self.formkey = self.extract_formkey(r.text)
       self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
     
     return next_data
@@ -133,7 +149,6 @@ class Client:
     r = request_with_retries(self.session.get, self.settings_url)
     data = r.json()
 
-    self.formkey = data["formkey"]
     return data["tchannelData"]
   
   def get_websocket_url(self, channel=None):
