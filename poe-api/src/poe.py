@@ -63,12 +63,15 @@ class Client:
       "Referrer": "https://poe.com/",
       "Origin": "https://poe.com",
     }
-    self.ws_domain = f"tch{random.randint(1, 1e6)}"
-
     self.session.headers.update(self.headers)
+
+    self.setup_connection()
+    self.connect_ws()
+
+  def setup_connection(self):
+    self.ws_domain = f"tch{random.randint(1, 1e6)}"
     self.next_data = self.get_next_data(overwrite_vars=True)
     self.channel = self.get_channel_data()
-    self.connect_ws()
     self.bots = self.get_bots(download_next_data=False)
     self.bot_names = self.get_bot_names()
 
@@ -80,11 +83,11 @@ class Client:
     self.subscribe()
     
   def extract_formkey(self, html):
-    script_regex = r'<script>if\("undefined"==typeof window\)throw new Error;(.+)</script>'
+    script_regex = r'<script>if\(.+\)throw new Error;(.+)</script>'
     script_text = re.search(script_regex, html).group(1)
-    key_regex = r'var c="([0-9a-f]+)",'
+    key_regex = r'var .="([0-9a-f]+)",'
     key_text = re.search(key_regex, script_text).group(1)
-    cipher_regex = r'e\[(\d+)\]=c\[(\d+)\]'
+    cipher_regex = r'.\[(\d+)\]=.\[(\d+)\]'
     cipher_pairs = re.findall(cipher_regex, script_text)
 
     formkey_list = [""] * len(cipher_pairs)
@@ -280,10 +283,13 @@ class Client:
     self.active_messages["pending"] = None
 
     logger.info(f"Sending message to {chatbot}: {message}")
+    
     #reconnect websocket
     if not self.ws_connected:
       self.disconnect_ws()
+      self.setup_connection()
       self.connect_ws()
+
     message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,
       "query": message,
