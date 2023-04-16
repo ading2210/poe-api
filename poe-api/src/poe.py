@@ -148,7 +148,7 @@ class Client:
     return bot_names
   
   def get_remaining_messages(self, chatbot):
-    chat_data = self.get_bot(chatbot)
+    chat_data = self.get_bot(self.bot_names[chatbot])
     return chat_data["defaultBotObject"]["messageLimit"]["numMessagesRemaining"]
       
   def get_channel_data(self, channel=None):
