@@ -148,14 +148,8 @@ class Client:
     return bot_names
   
   def get_remaining_messages(self, chatbot):
-    url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{chatbot}.json'
-    limited_chatbots = ["GPT-4", "Claude+"]
-    if chatbot in limited_chatbots:
-      r = request_with_retries(self.session.get, url)
-      remaining_count = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]["defaultBotObject"]["messageLimit"]["numMessagesRemaining"]
-      return remaining_count
-    else:
-      raise Exception(f"Chatbot {chatbot} is not limited or doesn't exist.")
+    chat_data = self.get_bot(chatbot)
+    return chat_data["defaultBotObject"]["messageLimit"]["numMessagesRemaining"]
       
   def get_channel_data(self, channel=None):
     logger.info("Downloading channel data...")
