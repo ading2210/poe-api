@@ -7,6 +7,7 @@ import time
 #send multiple messages and get their responses
 
 token = sys.argv[1]
+poe.logger.setLevel(logging.INFO)
 client = poe.Client(token)
 
 thread_count = 0

@@ -11,6 +11,8 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
   * [Finding Your Token](#finding-your-token)
   * [Using the Client](#using-the-client)
     + [Downloading the Available Bots](#downloading-the-available-bots)
+    + [Creating New Bots](#creating-new-bots)
+    + [Editing a Bot](#editing-a-bot)
     + [Sending Messages](#sending-messages)
     + [Clearing the Conversation Context](#clearing-the-conversation-context)
     + [Downloading Conversation History](#downloading-conversation-history)
@@ -19,6 +21,7 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
   * [Misc](#misc)
     + [Changing the Logging Level](#changing-the-logging-level)
     + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
+    + [Bypassing The GPT-4 Quota](#)
 - [Copyright](#copyright)
   * [Copyright Notice](#copyright-notice)
 
@@ -82,6 +85,54 @@ print(client.bot_names)
 ```
 
 Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
+
+#### Creating New Bots:
+You can create a new bot using the `client.create_bot` function, which accepts the following arguments:
+ - `handle` - The handle of the new bot.
+ - `prompt = ""` - The prompt for the new bot.
+ - `base_model = "chinchilla"` - The model that the new bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude).
+ - `description = ""` - The description for the new bot.
+ - `intro_message = ""` - The intro message for the new bot. If this is an empty string then the bot will not have an intro message.
+ - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
+ - `pfp_url = None` - The URL for the bot's profile picture. Currently, there is no way to actually upload a custom image using this library.
+ - `linkification = False` - Whether or not the bot should turn some text in the response into clickable links.
+ - `markdown_rendering = True` - Whether or not to enable markdown rendering for the bot's responses.
+ - `suggested_replies = False` - Whether or not the bot should suggest possible replies after each response.
+ - `private = False` - Whether or not the bot should be private.
+
+Additionally, there are some arguments that seem to be for the upcoming bot developer API. You do not need to specify these, although they may become useful in the future. The description for these arguments are currently my best guesses for what they do:
+ - `api_key = None` - The API key for the new bot. 
+ - `api_bot = False` - Whether or not the bot has API functionally enabled.
+ - `api_url = None` - The API URL for the new bot.
+
+A full example of how to create and edit bots is located at `examples/create_bot.py`.
+```python
+new_bot = client.create_bot(bot_name, "prompt goes here", base_model="a2")
+```
+
+#### Editing a Bot:
+You can edit a custom bot using the `client.edit_bot` function, which accepts the following arguments:
+ - `bot_id` - The `botId` of the bot to edit.
+ - `handle` - The handle of the bot to edit.
+ - `prompt` - The prompt for the new bot.
+ - `base_model = "chinchilla"` - The new model that the bot uses. This can be any of the preset models, including ones that are limited on free accounts.
+ - `description = ""` - The new description for the bot.
+ - `intro_message = ""` - The new intro message for the bot. If this is an empty string then the bot will not have an intro message.
+ - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
+ - `pfp_url = None` - The URL for the bot's profile picture. Currently, there is no way to actually upload a custom image using this library.
+ - `linkification = False` - Whether or not the bot should turn some text in the response into clickable links.
+ - `markdown_rendering = True` - Whether or not to enable markdown rendering for the bot's responses.
+ - `suggested_replies = False` - Whether or not the bot should suggest possible replies after each response.
+ - `private = False` - Whether or not the bot should be private.
+
+Unreleased bot developer API arguments:
+ - `api_key = None` - The new API key for the bot. 
+ - `api_url = None` - The new API URL for the bot.
+
+A full example of how to create and edit bots is located at `examples/create_bot.py`.
+```python
+edit_result = client.edit_bot(1086981, "bot_handle_here", base_model="beaver")
+```
 
 #### Sending Messages:
 You can use the `client.send_message` function to send a message to a chatbot, which accepts the following arguments:
@@ -195,6 +246,13 @@ If you want to change the user-agent that is being spoofed, set `poe.user_agent`
 import poe
 poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
 ```
+
+#### Bypassing the Free Account Quota:
+You can bypass the free account quota simply by editing a custom bot and setting the base model to one of the following options:
+ - `"a2_2"` - Claude+ (normal limit: 3 messages/day)
+ - `"beaver"` - GPT-4 (normal limit: 1 message/day)
+
+An example of how to do this is located at `examples/create_bot.py`.
 
 ## Copyright: 
 This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). Most code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).

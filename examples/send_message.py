@@ -5,6 +5,7 @@ import sys
 #send a message and stream the response
 
 token = sys.argv[1]
+poe.logger.setLevel(logging.INFO)
 client = poe.Client(token)
 
 message = "Summarize the GNU GPL v3"
