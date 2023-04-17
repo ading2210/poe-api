@@ -163,6 +163,10 @@ class Client:
       bot_names[bot_nickname] = bot_obj["displayName"]
     return bot_names
   
+  def get_remaining_messages(self, chatbot):
+    chat_data = self.get_bot(self.bot_names[chatbot])
+    return chat_data["defaultBotObject"]["messageLimit"]["numMessagesRemaining"]
+      
   def get_channel_data(self, channel=None):
     logger.info("Downloading channel data...")
     r = request_with_retries(self.session.get, self.settings_url)

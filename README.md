@@ -229,6 +229,12 @@ client.purge_conversation("capybara", count=10)
 client.purge_conversation("capybara")
 ```
 
+#### Getting the Remaining Messages:
+To get the number of messages remaining in the quota for a conversation, use the `client.get_remaining_messages` function. This function accepts the following arguments:
+ - `chatbot` - The codename of the chatbot.
+
+The function will return the number of messages remaining, or `None` if the bot does not have a quota.
+
 ### Misc:
 #### Changing the Logging Level:
 If you want to show debug messages, simply call `poe.logger.setLevel`.
@@ -258,6 +264,8 @@ An example of how to do this is located at `examples/create_bot.py`.
 This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). Most code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
 
 Reverse engineering the `poe-tag-id` header has been done by [xtekky](https://github.com/xtekky) in [PR #39](https://github.com/ading2210/poe-api/pull/39).
+
+The `client.get_remaining_messages` was written by [Snowad14](https://github.com/Snowad14) in [PR #46](https://github.com/ading2210/poe-api/pull/46).
 
 Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
 
