@@ -21,7 +21,6 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
   * [Misc](#misc)
     + [Changing the Logging Level](#changing-the-logging-level)
     + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
-    + [Bypassing The GPT-4 Quota](#)
 - [Copyright](#copyright)
   * [Copyright Notice](#copyright-notice)
 
