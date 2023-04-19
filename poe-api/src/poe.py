@@ -180,8 +180,8 @@ class Client:
     query = f'?min_seq={channel["minSeq"]}&channel={channel["channel"]}&hash={channel["channelHash"]}'
     return f'wss://{self.ws_domain}.tch.{channel["baseHost"]}/up/{channel["boxName"]}/updates'+query
 
-  def send_query(self, query_name, variables):
-    for i in range(20):
+  def send_query(self, query_name, variables, attempts=20):
+    for i in range(attempts):
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
       

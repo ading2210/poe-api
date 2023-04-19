@@ -21,7 +21,6 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
   * [Misc](#misc)
     + [Changing the Logging Level](#changing-the-logging-level)
     + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
-    + [Bypassing The GPT-4 Quota](#)
 - [Copyright](#copyright)
   * [Copyright Notice](#copyright-notice)
 
@@ -115,7 +114,7 @@ You can edit a custom bot using the `client.edit_bot` function, which accepts th
  - `bot_id` - The `botId` of the bot to edit.
  - `handle` - The handle of the bot to edit.
  - `prompt` - The prompt for the new bot.
- - `base_model = "chinchilla"` - The new model that the bot uses. This can be any of the preset models, including ones that are limited on free accounts.
+ - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude). Previously, it was possible to set this to `"beaver"` (GPT-4), which would bypass the free account restrictions, but this is now patched.
  - `description = ""` - The new description for the bot.
  - `intro_message = ""` - The new intro message for the bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
@@ -265,7 +264,7 @@ This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl
 
 Reverse engineering the `poe-tag-id` header has been done by [xtekky](https://github.com/xtekky) in [PR #39](https://github.com/ading2210/poe-api/pull/39).
 
-The `client.get_remaining_messages` was written by [Snowad14](https://github.com/Snowad14) in [PR #46](https://github.com/ading2210/poe-api/pull/46).
+The `client.get_remaining_messages` function was written by [Snowad14](https://github.com/Snowad14) in [PR #46](https://github.com/ading2210/poe-api/pull/46).
 
 Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
 
