@@ -15,5 +15,5 @@ print("new bot created: "+bot_name)
 
 handle = bot_name.lower()
 bot_id = client.bots[handle]["defaultBotObject"]["botId"]
-edit_result = client.edit_bot(bot_id, handle, base_model="a2_2") #set model to GPT-4, which bypasses the free account limits
+edit_result = client.edit_bot(bot_id, handle, base_model="a2") #switch model to claude
 print("edit status: "+edit_result["status"])
