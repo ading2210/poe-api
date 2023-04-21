@@ -252,13 +252,6 @@ import poe
 poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
 ```
 
-#### Bypassing the Free Account Quota:
-You can bypass the free account quota simply by editing a custom bot and setting the base model to one of the following options:
- - `"a2_2"` - Claude+ (normal limit: 3 messages/day)
- - `"beaver"` - GPT-4 (normal limit: 1 message/day)
-
-An example of how to do this is located at `examples/create_bot.py`.
-
 ## Copyright: 
 This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). Most code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
 
