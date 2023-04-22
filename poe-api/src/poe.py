@@ -4,7 +4,6 @@ import websocket
 from pathlib import Path
 from urllib.parse import urlparse
 
-
 parent_path = Path(__file__).resolve().parent
 queries_path = parent_path / "poe_graphql"
 queries = {}
@@ -12,7 +11,21 @@ queries = {}
 logging.basicConfig()
 logger = logging.getLogger()
 
-user_agent = "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0"
+user_agent = "This will be ignored! See the README for info on how to set custom headers."
+headers = {
+  "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Accept-Language": "en-US,en;q=0.9,und;q=0.8,af;q=0.7",
+  "Cache-Control": "no-cache",
+  "Dnt": "1",
+  "Pragma": "no-cache",
+  "Sec-Ch-Ua": "\"Google Chrome\";v=\"111\", \"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"111\"",
+  "Sec-Ch-Ua-Mobile": "?0",
+  "Sec-Ch-Ua-Platform": "\"Chrome OS\"",
+  "Sec-Gpc": "1",
+  "Upgrade-Insecure-Requests": "1"
+}
 
 def load_queries():
   for path in queries_path.iterdir():
@@ -44,7 +57,7 @@ class Client:
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
   
-  def __init__(self, token, proxy=None):
+  def __init__(self, token, proxy=None, headers=headers):
     self.proxy = proxy
     self.session = requests.Session()
     self.adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
@@ -62,11 +75,14 @@ class Client:
     self.message_queues = {}
 
     self.session.cookies.set("p-b", token, domain="poe.com")
-    self.headers = {
-      "User-Agent": user_agent,
+    self.headers = {**headers, **{
       "Referrer": "https://poe.com/",
       "Origin": "https://poe.com",
-    }
+      "Host": "poe.com",
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "same-origin",
+    }}
     self.session.headers.update(self.headers)
 
     self.setup_connection()

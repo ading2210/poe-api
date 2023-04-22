@@ -245,12 +245,34 @@ poe.logger.setLevel(logging.INFO)
 ```
 
 #### Setting a Custom User-Agent:
-If you want to change the user-agent that is being spoofed, set `poe.user_agent` after importing the library. 
+If you want to change the headers that are spoofed, set `poe.headers` after importing the library. 
 
+To use your browser's own headers, visit [this site](https://headers.uniqueostrich18.repl.co/), and copy-paste its contents.
 ```python
 import poe
-poe.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+poe.headers = {
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Accept-Language": "en-US,en;q=0.5",
+  "Te": "trailers",
+  "Upgrade-Insecure-Requests": "1"
+}
 ```
+
+The following headers will be ignored and overwritten:
+```python
+{
+  "Referrer": "https://poe.com/",
+  "Origin": "https://poe.com",
+  "Host": "poe.com",
+  "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors",
+  "Sec-Fetch-Site": "same-origin"
+}
+```
+
+Previously, this was done through `poe.user_agent`, but that variable is now completely ignored.
 
 #### Bypassing the Free Account Quota:
 You can bypass the free account quota simply by editing a custom bot and setting the base model to one of the following options:
