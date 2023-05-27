@@ -1,0 +1,65 @@
+query ExploreBotsListPaginationQuery($count: Int = 20, $cursor: String) {
+  ...ExploreBotsMain_queryRoot_1G22uz
+}
+
+fragment BotImage_bot on Bot {
+  displayName
+  ...botHelpers_useDeletion_bot
+  ...BotImage_useProfileImage_bot
+}
+
+fragment BotImage_useProfileImage_bot on Bot {
+  image {
+    __typename
+    ... on LocalBotImage {
+      localName
+    }
+    ... on UrlBotImage {
+      url
+    }
+  }
+  ...botHelpers_useDeletion_bot
+}
+
+fragment BotLink_bot on Bot {
+  displayName
+}
+
+fragment ExploreBotListItem_bot on Bot {
+  ...BotLink_bot
+  ...BotImage_bot
+  botId
+  displayName
+  followerCount
+  description
+}
+
+fragment ExploreBotsMain_queryRoot_1G22uz on QueryRoot {
+  exploreBotsConnection(first: $count, after: $cursor) {
+    edges {
+      ...ExploreBotsPagedList_edges
+      cursor
+      node {
+        __typename
+        id
+      }
+      id
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+    id
+  }
+}
+
+fragment ExploreBotsPagedList_edges on BotEdge {
+  node {
+    id
+    ...ExploreBotListItem_bot
+  }
+}
+
+fragment botHelpers_useDeletion_bot on Bot {
+  deletionState
+}

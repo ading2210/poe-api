@@ -142,6 +142,31 @@ class Client:
 
         return next_data
 
+    def explore_bots(self, end_cursor: int | None = None, count: int = 25) -> dict:
+        if not end_cursor:
+            url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
+            r = request_with_retries(self.session.get, url)
+            nodes: dict = r.json()["pageProps"]["payload"]["exploreBotsConnection"][
+                "edges"
+            ]
+            bots: list[dict] = [node["node"] for node in nodes]
+            return {
+                "bots": bots,
+                "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"][
+                    "pageInfo"
+                ]["endCursor"],
+            }
+        else:
+            # Use graphql to get the next page
+            result = self.send_query(
+                "ExploreBotsListPaginationQuery", {"count": count, "cursor": end_cursor}
+            )["data"]["payload"]["exploreBotsConnection"]
+            bots: list[dict] = [node["node"] for node in result["edges"]]
+            return {
+                "bots": bots,
+                "end_cursor": result["pageInfo"]["endCursor"],
+            }
+
     def get_bot(self, display_name):
         url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{display_name}.json'
 
@@ -208,7 +233,7 @@ class Client:
             + query
         )
 
-    def send_query(self, query_name, variables, attempts=20):
+    def send_query(self, query_name: str, variables: dict, attempts=20):
         for i in range(attempts):
             json_data = generate_payload(query_name, variables)
             payload = json.dumps(json_data, separators=(",", ":"))
@@ -256,6 +281,7 @@ class Client:
                 ]
             },
         )
+        return result
 
     def ws_run_thread(self):
         kwargs = {}
