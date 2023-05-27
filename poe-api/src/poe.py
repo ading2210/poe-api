@@ -79,7 +79,8 @@ class Client:
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
   
-  def __init__(self, token, proxy=None, headers=headers):
+  def __init__(self, token, proxy=None, headers=headers, device_id=None):
+    self.device_id = device_id or get_singular_deviceID()
     self.proxy = proxy
     self.session = requests.Session(client_identifier="firefox_102")
         
@@ -390,7 +391,7 @@ class Client:
         "chatId": chat_id,
         "source": None,
         "clientNonce": generate_nonce(),
-        "sdid": get_singular_deviceID(),
+        "sdid": self.device_id,
         "withChatBreak": with_chat_break,
       },
     )
