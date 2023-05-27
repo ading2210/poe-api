@@ -1,6 +1,8 @@
-import requests, re, json, random, logging, time, queue, threading, traceback, hashlib, string, random
-import requests.adapters
+import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random
+import tls_client as requests
+import secrets
 import websocket
+import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -47,9 +49,29 @@ def request_with_retries(method, *args, **kwargs):
     r = method(*args, **kwargs)
     if r.status_code == 200:
       return r
+    if r.status_code == 307:
+      if r.headers.get("Location").startswith("/login"):
+        raise RuntimeError("Invalid or missing token.")
     logger.warn(f"Server returned a status code of {r.status_code} while downloading {url}. Retrying ({i+1}/{attempts})...")
   
   raise RuntimeError(f"Failed to download {url} too many times.")
+
+def generate_nonce(length:int=16) -> str:
+  return "".join(secrets.choice(string.ascii_letters + string.digits) for i in range(length))
+
+def get_singular_deviceID() -> str:
+  # Try to read ~/.poe/deviceID
+  deviceID_path = Path.home() / ".poe" / "deviceID"
+  if deviceID_path.exists():
+    with open(deviceID_path) as f:
+      return f.read().strip()
+  else:
+    # Generate a new deviceID and write it to ~/.poe/deviceID
+    deviceID = str(uuid.uuid4())
+    deviceID_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(deviceID_path, "w") as f:
+      f.write(deviceID)
+    return deviceID
 
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
@@ -59,10 +81,7 @@ class Client:
   
   def __init__(self, token, proxy=None, headers=headers):
     self.proxy = proxy
-    self.session = requests.Session()
-    self.adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
-    self.session.mount("http://", self.adapter)
-    self.session.mount("https://", self.adapter)
+    self.session = requests.Session(client_identifier="firefox_102")
         
     if proxy:
       self.session.proxies = {
@@ -370,6 +389,8 @@ class Client:
         "query": message,
         "chatId": chat_id,
         "source": None,
+        "clientNonce": generate_nonce(),
+        "sdid": get_singular_deviceID(),
         "withChatBreak": with_chat_break,
       },
     )
