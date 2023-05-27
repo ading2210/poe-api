@@ -1,6 +1,8 @@
-import requests, re, json, random, logging, time, queue, threading, traceback, hashlib, string, random
-import requests.adapters
+import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random
+import tls_client as requests
+import secrets
 import websocket
+import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -47,9 +49,29 @@ def request_with_retries(method, *args, **kwargs):
     r = method(*args, **kwargs)
     if r.status_code == 200:
       return r
+    if r.status_code == 307:
+      if r.headers.get("Location").startswith("/login"):
+        raise RuntimeError("Invalid or missing token.")
     logger.warn(f"Server returned a status code of {r.status_code} while downloading {url}. Retrying ({i+1}/{attempts})...")
   
   raise RuntimeError(f"Failed to download {url} too many times.")
+
+def generate_nonce(length:int=16) -> str:
+  return "".join(secrets.choice(string.ascii_letters + string.digits) for i in range(length))
+
+def get_singular_deviceID() -> str:
+  # Try to read ~/.poe/deviceID
+  deviceID_path = Path.home() / ".poe" / "deviceID"
+  if deviceID_path.exists():
+    with open(deviceID_path) as f:
+      return f.read().strip()
+  else:
+    # Generate a new deviceID and write it to ~/.poe/deviceID
+    deviceID = str(uuid.uuid4())
+    deviceID_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(deviceID_path, "w") as f:
+      f.write(deviceID)
+    return deviceID
 
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
@@ -57,12 +79,10 @@ class Client:
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
   
-  def __init__(self, token, proxy=None, headers=headers):
+  def __init__(self, token, proxy=None, headers=headers, device_id=None):
+    self.device_id = device_id or get_singular_deviceID()
     self.proxy = proxy
-    self.session = requests.Session()
-    self.adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100)
-    self.session.mount("http://", self.adapter)
-    self.session.mount("https://", self.adapter)
+    self.session = requests.Session(client_identifier="firefox_102")
         
     if proxy:
       self.session.proxies = {
@@ -178,6 +198,31 @@ class Client:
       bot_obj = self.bots[bot_nickname]["defaultBotObject"]
       bot_names[bot_nickname] = bot_obj["displayName"]
     return bot_names
+  
+  def explore_bots(self, end_cursor: int | None = None, count: int = 25) -> dict:
+    if not end_cursor:
+      url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
+      r = request_with_retries(self.session.get, url)
+      nodes: dict = r.json()["pageProps"]["payload"]["exploreBotsConnection"][
+        "edges"
+      ]
+      bots: list[dict] = [node["node"] for node in nodes]
+      return {
+        "bots": bots,
+        "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"][
+          "pageInfo"
+        ]["endCursor"],
+      }
+    else:
+      # Use graphql to get the next page
+      result = self.send_query(
+        "ExploreBotsListPaginationQuery", {"count": count, "cursor": end_cursor}
+      )["data"]["exploreBotsConnection"]
+      bots: list[dict] = [node["node"] for node in result["edges"]]
+      return {
+        "bots": bots,
+        "end_cursor": result["pageInfo"]["endCursor"],
+      }
   
   def get_remaining_messages(self, chatbot):
     chat_data = self.get_bot(self.bot_names[chatbot])
@@ -310,40 +355,58 @@ class Client:
       self.disconnect_ws()
       self.connect_ws()
 
-  def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
-    #if there is another active message, wait until it has finished sending
+  def send_message(
+    self,
+    chatbot,
+    message,
+    with_chat_break=False,
+    timeout=20,
+  ):
+    # if there is another active message, wait until it has finished sending
     while None in self.active_messages.values():
       time.sleep(0.01)
 
-    #None indicates that a message is still in progress
+    # None indicates that a message is still in progress
     self.active_messages["pending"] = None
 
     logger.info(f"Sending message to {chatbot}: {message}")
-    
-    #reconnect websocket
+
+    # reconnect websocket
     if not self.ws_connected:
       self.disconnect_ws()
       self.setup_connection()
       self.connect_ws()
 
-    message_data = self.send_query("SendMessageMutation", {
-      "bot": chatbot,
-      "query": message,
-      "chatId": self.bots[chatbot]["chatId"],
-      "source": None,
-      "withChatBreak": with_chat_break
-    })
+    chat_id = (
+      self.bots[chatbot]["chatId"]
+      if chatbot in self.bots
+      else self.get_bot(chatbot)["chatId"]
+    )
+
+    message_data = self.send_query(
+      "SendMessageMutation",
+      {
+        "bot": chatbot,
+        "query": message,
+        "chatId": chat_id,
+        "source": None,
+        "clientNonce": generate_nonce(),
+        "sdid": self.device_id,
+        "withChatBreak": with_chat_break,
+      },
+    )
     del self.active_messages["pending"]
-    
+
     if not message_data["data"]["messageEdgeCreate"]["message"]:
       raise RuntimeError(f"Daily limit reached for {chatbot}.")
     try:
       human_message = message_data["data"]["messageEdgeCreate"]["message"]
       human_message_id = human_message["node"]["messageId"]
     except TypeError:
-      raise RuntimeError(f"An unknown error occured. Raw response data: {message_data}")
-
-    #indicate that the current message is waiting for a response
+      raise RuntimeError(
+        f"An unknown error occured. Raw response data: {message_data}"
+      )
+    # indicate that the current message is waiting for a response
     self.active_messages[human_message_id] = None
     self.message_queues[human_message_id] = queue.Queue()
 
@@ -356,21 +419,18 @@ class Client:
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
         raise RuntimeError("Response timed out.")
-      
       #only break when the message is marked as complete
       if message["state"] == "complete":
         if last_text and message["messageId"] == message_id:
           break
         else:
           continue
-      
       #update info about response
-      message["text_new"] = message["text"][len(last_text):]
+      message["text_new"] = message["text"][len(last_text) :]
       last_text = message["text"]
       message_id = message["messageId"]
 
       yield message
-    
     del self.active_messages[human_message_id]
     del self.message_queues[human_message_id]
   

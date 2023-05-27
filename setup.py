@@ -33,7 +33,8 @@ setuptools.setup(
   install_requires=[
     "websocket-client",
     "requests[socks]",
-    "python-socks"
+    "python-socks",
+    "tls_client",
   ],
   url="https://github.com/ading2210/poe-api"
 )
