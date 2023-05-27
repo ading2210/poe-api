@@ -160,7 +160,7 @@ class Client:
             # Use graphql to get the next page
             result = self.send_query(
                 "ExploreBotsListPaginationQuery", {"count": count, "cursor": end_cursor}
-            )["data"]["payload"]["exploreBotsConnection"]
+            )["data"]["exploreBotsConnection"]
             bots: list[dict] = [node["node"] for node in result["edges"]]
             return {
                 "bots": bots,
