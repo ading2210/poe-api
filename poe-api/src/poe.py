@@ -175,12 +175,12 @@ class Client:
         chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
         return chat_data
 
-    def get_bots(self):
+    def get_bots(self, download_next_data: bool = True):
         logger.info("Downloading all bots...")
-        # if download_next_data:
-        #   next_data = self.get_next_data(overwrite_vars=True)
-        # else:
-        #   next_data = self.next_data
+        if download_next_data:
+            next_data = self.get_next_data(overwrite_vars=True)
+        else:
+            next_data = self.next_data
 
         if not "availableBots" in self.viewer:
             raise RuntimeError("Invalid token or no bots are available.")
@@ -363,7 +363,13 @@ class Client:
             self.disconnect_ws()
             self.connect_ws()
 
-    def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
+    def send_message(
+        self,
+        chatbot,
+        message,
+        with_chat_break=False,
+        timeout=20,
+    ):
         # if there is another active message, wait until it has finished sending
         while None in self.active_messages.values():
             time.sleep(0.01)
@@ -379,12 +385,18 @@ class Client:
             self.setup_connection()
             self.connect_ws()
 
+        chat_id = (
+            self.bots[chatbot]["chatId"]
+            if chatbot in self.bots
+            else self.get_bot(chatbot)["chatId"]
+        )
+
         message_data = self.send_query(
             "SendMessageMutation",
             {
                 "bot": chatbot,
                 "query": message,
-                "chatId": self.bots[chatbot]["chatId"],
+                "chatId": chat_id,
                 "source": None,
                 "withChatBreak": with_chat_break,
             },
