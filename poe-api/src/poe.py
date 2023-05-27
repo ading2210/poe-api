@@ -203,21 +203,21 @@ class Client:
     if not end_cursor:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
       r = request_with_retries(self.session.get, url)
-      nodes: dict = r.json()["pageProps"]["payload"]["exploreBotsConnection"][
-        "edges"
-      ]
+      nodes: dict = r.json()["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
       bots: list[dict] = [node["node"] for node in nodes]
       return {
         "bots": bots,
-        "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"][
-          "pageInfo"
-        ]["endCursor"],
+        "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
       }
+
     else:
       # Use graphql to get the next page
-      result = self.send_query(
-        "ExploreBotsListPaginationQuery", {"count": count, "cursor": end_cursor}
-      )["data"]["exploreBotsConnection"]
+      result = self.send_query("ExploreBotsListPaginationQuery", {
+        "count": count, 
+        "cursor": end_cursor
+      })
+      result = result["data"]["exploreBotsConnection"]
+
       bots: list[dict] = [node["node"] for node in result["edges"]]
       return {
         "bots": bots,
@@ -355,13 +355,7 @@ class Client:
       self.disconnect_ws()
       self.connect_ws()
 
-  def send_message(
-    self,
-    chatbot,
-    message,
-    with_chat_break=False,
-    timeout=20,
-  ):
+  def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
     # if there is another active message, wait until it has finished sending
     while None in self.active_messages.values():
       time.sleep(0.01)
@@ -383,18 +377,15 @@ class Client:
       else self.get_bot(chatbot)["chatId"]
     )
 
-    message_data = self.send_query(
-      "SendMessageMutation",
-      {
-        "bot": chatbot,
-        "query": message,
-        "chatId": chat_id,
-        "source": None,
-        "clientNonce": generate_nonce(),
-        "sdid": self.device_id,
-        "withChatBreak": with_chat_break,
-      },
-    )
+    message_data = self.send_query("SendMessageMutation", {
+      "bot": chatbot,
+      "query": message,
+      "chatId": chat_id,
+      "source": None,
+      "clientNonce": generate_nonce(),
+      "sdid": self.device_id,
+      "withChatBreak": with_chat_break,
+    })
     del self.active_messages["pending"]
 
     if not message_data["data"]["messageEdgeCreate"]["message"]:
@@ -403,9 +394,8 @@ class Client:
       human_message = message_data["data"]["messageEdgeCreate"]["message"]
       human_message_id = human_message["node"]["messageId"]
     except TypeError:
-      raise RuntimeError(
-        f"An unknown error occured. Raw response data: {message_data}"
-      )
+      raise RuntimeError(f"An unknown error occured. Raw response data: {message_data}")
+
     # indicate that the current message is waiting for a response
     self.active_messages[human_message_id] = None
     self.message_queues[human_message_id] = queue.Queue()
@@ -419,26 +409,29 @@ class Client:
         del self.active_messages[human_message_id]
         del self.message_queues[human_message_id]
         raise RuntimeError("Response timed out.")
+
       #only break when the message is marked as complete
       if message["state"] == "complete":
         if last_text and message["messageId"] == message_id:
           break
         else:
           continue
+
       #update info about response
       message["text_new"] = message["text"][len(last_text) :]
       last_text = message["text"]
       message_id = message["messageId"]
 
       yield message
+
     del self.active_messages[human_message_id]
     del self.message_queues[human_message_id]
   
   def send_chat_break(self, chatbot):
     logger.info(f"Sending chat break to {chatbot}")
     result = self.send_query("AddMessageBreakMutation", {
-      "chatId": self.bots[chatbot]["chatId"]
-    })
+      "chatId": self.bots[chatbot]["chatId"]}
+    )
     return result["data"]["messageBreakCreate"]["message"]
 
   def get_message_history(self, chatbot, count=25, cursor=None):
@@ -499,27 +492,28 @@ class Client:
       if count == 0:
         return
       last_messages = self.get_message_history(chatbot, count=50)[::-1]
+      
     logger.info(f"No more messages left to delete.")
 
   def create_bot(self, handle, prompt="", base_model="chinchilla", description="", 
-                 intro_message="", api_key=None, api_bot=False, api_url=None,
-                 prompt_public=True, pfp_url=None, linkification=False,
-                 markdown_rendering=True, suggested_replies=False, private=False):
+                  intro_message="", api_key=None, api_bot=False, api_url=None,
+                  prompt_public=True, pfp_url=None, linkification=False,
+                  markdown_rendering=True, suggested_replies=False, private=False):
     result = self.send_query("PoeBotCreateMutation", {
-        "model": base_model,
-        "handle": handle,
-        "prompt": prompt,
-        "isPromptPublic": prompt_public,
-        "introduction": intro_message,
-        "description": description,
-        "profilePictureUrl": pfp_url,
-        "apiUrl": api_url,
-        "apiKey": api_key,
-        "isApiBot": api_bot,
-        "hasLinkification": linkification,
-        "hasMarkdownRendering": markdown_rendering,
-        "hasSuggestedReplies": suggested_replies,
-        "isPrivateBot": private
+      "model": base_model,
+      "handle": handle,
+      "prompt": prompt,
+      "isPromptPublic": prompt_public,
+      "introduction": intro_message,
+      "description": description,
+      "profilePictureUrl": pfp_url,
+      "apiUrl": api_url,
+      "apiKey": api_key,
+      "isApiBot": api_bot,
+      "hasLinkification": linkification,
+      "hasMarkdownRendering": markdown_rendering,
+      "hasSuggestedReplies": suggested_replies,
+      "isPrivateBot": private
     })
 
     data = result["data"]["poeBotCreate"]
@@ -529,24 +523,24 @@ class Client:
     return data
 
   def edit_bot(self, bot_id, handle, prompt="", base_model="chinchilla", description="", 
-                 intro_message="", api_key=None, api_url=None, private=False,
-                 prompt_public=True, pfp_url=None, linkification=False,
-                 markdown_rendering=True, suggested_replies=False):
+                intro_message="", api_key=None, api_url=None, private=False,
+                prompt_public=True, pfp_url=None, linkification=False,
+                markdown_rendering=True, suggested_replies=False):
     result = self.send_query("PoeBotEditMutation", {
-        "baseBot": base_model,
-        "botId": bot_id,
-        "handle": handle,
-        "prompt": prompt,
-        "isPromptPublic": prompt_public,
-        "introduction": intro_message,
-        "description": description,
-        "profilePictureUrl": pfp_url,
-        "apiUrl": api_url,
-        "apiKey": api_key,
-        "hasLinkification": linkification,
-        "hasMarkdownRendering": markdown_rendering,
-        "hasSuggestedReplies": suggested_replies,
-        "isPrivateBot": private
+      "baseBot": base_model,
+      "botId": bot_id,
+      "handle": handle,
+      "prompt": prompt,
+      "isPromptPublic": prompt_public,
+      "introduction": intro_message,
+      "description": description,
+      "profilePictureUrl": pfp_url,
+      "apiUrl": api_url,
+      "apiKey": api_key,
+      "hasLinkification": linkification,
+      "hasMarkdownRendering": markdown_rendering,
+      "hasSuggestedReplies": suggested_replies,
+      "isPrivateBot": private
     })
 
     data = result["data"]["poeBotEdit"]
