@@ -196,12 +196,12 @@ class Client:
       bot_names[bot_nickname] = bot_obj["displayName"]
     return bot_names
   
-  def explore_bots(self, end_cursor: int | None = None, count: int = 25) -> dict:
+  def explore_bots(self, end_cursor=None, count=25):
     if not end_cursor:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
       r = request_with_retries(self.session.get, url)
-      nodes: dict = r.json()["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
-      bots: list[dict] = [node["node"] for node in nodes]
+      nodes = r.json()["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
+      bots = [node["node"] for node in nodes]
       return {
         "bots": bots,
         "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
@@ -215,7 +215,7 @@ class Client:
       })
       result = result["data"]["exploreBotsConnection"]
 
-      bots: list[dict] = [node["node"] for node in result["edges"]]
+      bots = [node["node"] for node in result["edges"]]
       return {
         "bots": bots,
         "end_cursor": result["pageInfo"]["endCursor"],
@@ -371,7 +371,7 @@ class Client:
     if chatbot in self.bots:
       chat_id = self.bots[chatbot]["chatId"]
     else:
-      self.get_bot(chatbot)["chatId"]
+      chat_id = self.get_bot(chatbot)["chatId"]
 
     message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,

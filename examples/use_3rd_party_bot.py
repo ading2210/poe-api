@@ -1,5 +1,6 @@
 import poe
-from os import getenv
+import sys
+import logging
 
 poe.logger.setLevel(logging.INFO)
 token = sys.argv[1]
