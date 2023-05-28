@@ -1,7 +1,9 @@
 import poe
 from os import getenv
 
-client = poe.Client(getenv("POE_TOKEN"))
+poe.logger.setLevel(logging.INFO)
+token = sys.argv[1]
+client = poe.Client(token)
 
 bots = client.explore_bots()
 bots = client.explore_bots(end_cursor=bots["end_cursor"])

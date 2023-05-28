@@ -1,4 +1,4 @@
-import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random
+import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random, os
 import tls_client as requests
 import secrets
 import websocket
@@ -15,17 +15,11 @@ logger = logging.getLogger()
 
 user_agent = "This will be ignored! See the README for info on how to set custom headers."
 headers = {
-  "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
   "Accept-Encoding": "gzip, deflate, br",
-  "Accept-Language": "en-US,en;q=0.9,und;q=0.8,af;q=0.7",
-  "Cache-Control": "no-cache",
-  "Dnt": "1",
-  "Pragma": "no-cache",
-  "Sec-Ch-Ua": "\"Google Chrome\";v=\"111\", \"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"111\"",
-  "Sec-Ch-Ua-Mobile": "?0",
-  "Sec-Ch-Ua-Platform": "\"Chrome OS\"",
-  "Sec-Gpc": "1",
+  "Accept-Language": "en-US,en;q=0.5",
+  "Te": "trailers",
   "Upgrade-Insecure-Requests": "1"
 }
 
@@ -59,19 +53,22 @@ def request_with_retries(method, *args, **kwargs):
 def generate_nonce(length:int=16) -> str:
   return "".join(secrets.choice(string.ascii_letters + string.digits) for i in range(length))
 
-def get_singular_deviceID() -> str:
-  # Try to read ~/.poe/deviceID
-  deviceID_path = Path.home() / ".poe" / "deviceID"
-  if deviceID_path.exists():
-    with open(deviceID_path) as f:
+def get_saved_device_id() -> str:
+  if os.name == "nt":
+    device_id_path = Path.home() / "AppData" / "Roaming" / "poe-api" / "device_id.txt"
+  else:  
+    device_id_path = Path.home() / ".config" / "poe-api" / "device_id.txt"
+
+  if device_id_path.exists():
+    with open(device_id_path) as f:
       return f.read().strip()
   else:
-    # Generate a new deviceID and write it to ~/.poe/deviceID
-    deviceID = str(uuid.uuid4())
-    deviceID_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(deviceID_path, "w") as f:
-      f.write(deviceID)
-    return deviceID
+    # Generate a new deviceID and write it
+    device_id = str(uuid.uuid4())
+    device_id_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(device_id_path, "w") as f:
+      f.write(device_id)
+    return device_id
 
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
@@ -79,10 +76,10 @@ class Client:
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
   
-  def __init__(self, token, proxy=None, headers=headers, device_id=None):
-    self.device_id = device_id or get_singular_deviceID()
+  def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier="firefox_102"):
+    self.device_id = device_id or get_saved_device_id()
     self.proxy = proxy
-    self.session = requests.Session(client_identifier="firefox_102")
+    self.session = requests.Session(client_identifier=client_identifier)
         
     if proxy:
       self.session.proxies = {
@@ -370,12 +367,11 @@ class Client:
       self.disconnect_ws()
       self.setup_connection()
       self.connect_ws()
-
-    chat_id = (
-      self.bots[chatbot]["chatId"]
-      if chatbot in self.bots
-      else self.get_bot(chatbot)["chatId"]
-    )
+    
+    if chatbot in self.bots:
+      chat_id = self.bots[chatbot]["chatId"]
+    else:
+      self.get_bot(chatbot)["chatId"]
 
     message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,
