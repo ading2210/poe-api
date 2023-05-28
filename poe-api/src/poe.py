@@ -22,6 +22,7 @@ headers = {
   "Te": "trailers",
   "Upgrade-Insecure-Requests": "1"
 }
+client_identifier = "firefox_102"
 
 def load_queries():
   for path in queries_path.iterdir():
@@ -50,25 +51,43 @@ def request_with_retries(method, *args, **kwargs):
   
   raise RuntimeError(f"Failed to download {url} too many times.")
 
-def generate_nonce(length:int=16) -> str:
+def generate_nonce(length:int=16):
   return "".join(secrets.choice(string.ascii_letters + string.digits) for i in range(length))
 
-def get_saved_device_id() -> str:
+def get_config_path():
   if os.name == "nt":
-    device_id_path = Path.home() / "AppData" / "Roaming" / "poe-api" / "device_id.txt"
-  else:  
-    device_id_path = Path.home() / ".config" / "poe-api" / "device_id.txt"
+    return Path.home() / "AppData" / "Roaming" / "poe-api"
+  return Path.home() / ".config" / "poe-api"
 
+def set_saved_device_id(user_id, device_id):
+  device_id_path = get_config_path() / "device_id.json"
+  device_ids = {}
   if device_id_path.exists():
     with open(device_id_path) as f:
-      return f.read().strip()
-  else:
-    # Generate a new deviceID and write it
-    device_id = str(uuid.uuid4())
-    device_id_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(device_id_path, "w") as f:
-      f.write(device_id)
-    return device_id
+      device_ids = json.loads(f.read())
+  
+  device_ids[user_id] = device_id
+  device_id_path.parent.mkdir(parents=True, exist_ok=True)
+  with open(device_id_path, "w") as f:
+    f.write(json.dumps(device_ids, indent=2))
+
+def get_saved_device_id(user_id):
+  device_id_path = get_config_path() / "device_id.json"
+  device_ids = {}
+  if device_id_path.exists():
+    with open(device_id_path) as f:
+      device_ids = json.loads(f.read())
+  
+  if user_id in device_ids:
+    return device_ids[user_id]
+  
+  device_id = str(uuid.uuid4())
+  device_ids[user_id] = device_id
+  device_id_path.parent.mkdir(parents=True, exist_ok=True)
+  with open(device_id_path, "w") as f:
+    f.write(json.dumps(device_ids, indent=2))
+  
+  return device_id
 
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
@@ -76,8 +95,8 @@ class Client:
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
   
-  def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier="firefox_102"):
-    self.device_id = device_id or get_saved_device_id()
+  def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier):
+    self.device_id = device_id
     self.proxy = proxy
     self.session = requests.Session(client_identifier=client_identifier)
         
@@ -112,12 +131,20 @@ class Client:
     self.bots = self.get_bots(download_next_data=False)
     self.bot_names = self.get_bot_names()
 
+    if self.device_id is None:
+      self.device_id = self.get_device_id()
+
     self.gql_headers = {
       "poe-formkey": self.formkey,
       "poe-tchannel": self.channel["channel"],
     }
     self.gql_headers = {**self.gql_headers, **self.headers}
     self.subscribe()
+  
+  def get_device_id(self):
+    user_id = self.viewer["poeUser"]["id"]
+    device_id = get_saved_device_id(user_id)
+    return device_id
     
   def extract_formkey(self, html):
     script_regex = r'<script>if\(.+\)throw new Error;(.+)</script>'
