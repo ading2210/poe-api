@@ -1,6 +1,8 @@
 #github boilerplate .gitignore
 #https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 
+/.vscode
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

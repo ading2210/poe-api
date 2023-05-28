@@ -2,7 +2,7 @@
 
 [![PyPi Version](https://img.shields.io/pypi/v/poe-api.svg)](https://pypi.org/project/poe-api/)
 
-This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Antropic's Claude.
+This is a reverse engineered API wrapper for Quora's Poe, which allows you free access to OpenAI's ChatGPT and GPT-4, as well as Anthropic's Claude.
 
 ## Table of Contents:
 - [Features](#features)
@@ -11,6 +11,7 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
   * [Finding Your Token](#finding-your-token)
   * [Using the Client](#using-the-client)
     + [Downloading the Available Bots](#downloading-the-available-bots)
+    + [Using 3rd Party Bots](#using-3rd-party-bots)
     + [Creating New Bots](#creating-new-bots)
     + [Editing a Bot](#editing-a-bot)
     + [Sending Messages](#sending-messages)
@@ -21,6 +22,7 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
   * [Misc](#misc)
     + [Changing the Logging Level](#changing-the-logging-level)
     + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
+    + [Setting a Custom Device ID](#setting-a-custom-device-id)
 - [Copyright](#copyright)
   * [Copyright Notice](#copyright-notice)
 
@@ -58,7 +60,10 @@ Log into [Poe](https://poe.com) on any web browser, then open your browser's dev
 ### Using the Client:
 To use this library, simply import `poe` and create a `poe.Client` instance. The Client class accepts the following arguments:
  - `token` - The token to use. 
- - `proxy = None` - The proxy to use, in the format `protocol://host:port`. The socks5/socks4 protocol is reccommended.
+ - `proxy = None` - The proxy to use, in the format `protocol://host:port`. The `socks5h` protocol is recommended, as it also proxies the DNS queries.
+ - `device_id = None` - The device ID to use. If this is not specified, it will be randomly generated and stored on the disk. 
+ - `headers = headers` - The headers to use. This defaults to the headers specified in `poe.headers`.
+ - `client_identifier = client_identifier` - The client identifier that will be passed into the TLS client library. This defaults to the one specified in `poe.client_identifier`.
 
 Regular Example:
 ```python
@@ -69,21 +74,63 @@ client = poe.Client("TOKEN_HERE")
 Proxied Example:
 ```python
 import poe
-client = poe.Client("TOKEN_HERE", proxy="socks5://178.62.100.151:59166")
+client = poe.Client("TOKEN_HERE", proxy="socks5h://178.62.100.151:59166")
 ```
 
 Note that the following examples assume `client` is the name of your `poe.Client` instance. If the token is invalid, a RuntimeError will be raised.
 
 #### Downloading the Available Bots:
 The client downloads all of the available bots upon initialization and stores them within `client.bots`. A dictionary that maps bot codenames to their display names can be found at `client.bot_names`. If you want to refresh these values, you can call `client.get_bots`. This function takes the following arguments:
- - `download_next_data = True` - Whether or not to redownload the `__NEXT_DATA__`, which is required if the bot list has changed. 
+ - `download_next_data = True` - Whether or not to re-download the `__NEXT_DATA__`, which is required if the bot list has changed. 
 
 ```python
-print(client.bot_names)
-#{'capybara': 'Sage', 'beaver': 'GPT-4', 'a2_2': 'Claude+', 'a2': 'Claude', 'chinchilla': 'ChatGPT', 'nutria': 'Dragonfly'}
+print(json.dumps(client.bot_names, indent=2))
+"""
+{
+  "capybara": "Sage",
+  "a2": "Claude-instant",
+  "nutria": "Dragonfly",
+  "a2_100k": "Claude-instant-100k",
+  "beaver": "GPT-4",
+  "chinchilla": "ChatGPT",
+  "a2_2": "Claude+"
+}
+"""
 ```
 
-Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
+Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. Claude-instant-100k (c2_100k) is completely inaccessible for free accounts. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
+
+#### Using 3rd Party Bots
+To get a list of 3rd party bots, use `client.explore_bots`, which accepts the following arguments:
+ - `end_cursor = None` - The cursor to use when fetching the list. 
+ - `count = 25` - The number of bots that is returned.
+
+The function will return a dict containing a list of bots and the cursor for the next page:
+```python
+print(json.dumps(client.explore_bots(count=1), indent=2))
+"""
+{
+  "bots": [
+    {
+      "id": "Qm90OjEwMzI2MDI=",
+      "displayName": "leocooks",
+      "deletionState": "not_deleted",
+      "image": {
+        "__typename": "UrlBotImage",
+        "url": "https://qph.cf2.quoracdn.net/main-thumb-pb-1032602-200-uorvomwowfgmatdvrtwajtwwqlujmmgu.jpeg"
+      },
+      "botId": 1032602,
+      "followerCount": 1922,
+      "description": "Above average meals for average cooks, made simple by world-renowned chef, Leonardo",
+      "__typename": "Bot"
+    }
+  ],
+  "end_cursor": "1000172"
+}
+"""
+```
+
+Since display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message` to send it a message.
 
 #### Creating New Bots:
 You can create a new bot using the `client.create_bot` function, which accepts the following arguments:
@@ -99,7 +146,7 @@ You can create a new bot using the `client.create_bot` function, which accepts t
  - `suggested_replies = False` - Whether or not the bot should suggest possible replies after each response.
  - `private = False` - Whether or not the bot should be private.
 
-Additionally, there are some arguments that seem to be for the upcoming bot developer API. You do not need to specify these, although they may become useful in the future. The description for these arguments are currently my best guesses for what they do:
+Use these arguments if you want the new bot to use your own API (as detailed [here](https://github.com/poe-platform/api-bot-tutorial)):
  - `api_key = None` - The API key for the new bot. 
  - `api_bot = False` - Whether or not the bot has API functionally enabled.
  - `api_url = None` - The API URL for the new bot.
@@ -124,7 +171,7 @@ You can edit a custom bot using the `client.edit_bot` function, which accepts th
  - `suggested_replies = False` - Whether or not the bot should suggest possible replies after each response.
  - `private = False` - Whether or not the bot should be private.
 
-Unreleased bot developer API arguments:
+Bot API related arguments:
  - `api_key = None` - The new API key for the bot. 
  - `api_url = None` - The new API URL for the bot.
 
@@ -157,7 +204,7 @@ for chunk in client.send_message("capybara", message):
 print(chunk["text"])
 ```
 
-You can also send multiple messages in parallel using `threading` and recieve their responses seperately, as demonstrated in `/examples/parallel_messages.py`. Note that if you send messages too fast, the server will give an error, but the request will eventually succeed.
+You can also send multiple messages in parallel using `threading` and receive their responses separately, as demonstrated in `/examples/parallel_messages.py`. Note that if you send messages too fast, the server will give an error, but the request will eventually succeed.
 
 #### Clearing the Conversation Context:
 If you want to clear the the context of a conversation without sending a message, you can use `client.send_chat_break`. The only argument is the codename of the bot whose context will be cleared.
@@ -274,12 +321,25 @@ The following headers will be ignored and overwritten:
 
 Previously, this was done through `poe.user_agent`, but that variable is now completely ignored.
 
+You'd also want to change `poe.client_identifier` to match the user-agent that you have set. See the [Python-TLS-Client documentation](https://github.com/FlorianREGAZ/Python-Tls-Client#examples) for some examples.
+
+### Setting a Custom Device ID:
+If you want to change the device ID that is being spoofed, you can use the `poe.set_device_id`, which accepts the following arguments:
+ - `user_id` - The user ID of the account you want to change the device ID for.
+ - `device_id` - The new device ID. This is a standard 32 character UUID string.
+
+The device IDs are saved to `~/.config/poe-api/device_id.json` on Unix-like systems, and `C:\Users\<user>\AppData\Roaming\poe-api\device_id.json` on Windows.
+
+Additionally, the `poe.get_device_id` function or `client.device_id` can be used to retrieve the saved device ID.
+
 ## Copyright: 
 This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). Most code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
 
 Reverse engineering the `poe-tag-id` header has been done by [xtekky](https://github.com/xtekky) in [PR #39](https://github.com/ading2210/poe-api/pull/39).
 
 The `client.get_remaining_messages` function was written by [Snowad14](https://github.com/Snowad14) in [PR #46](https://github.com/ading2210/poe-api/pull/46).
+
+Detection avoidance and fetching the third party bots has been done by [acheong08](https://github.com/acheong08/) in [PR #79](https://github.com/ading2210/poe-api/pull/79).
 
 Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
 

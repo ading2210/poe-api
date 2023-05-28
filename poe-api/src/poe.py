@@ -173,8 +173,9 @@ class Client:
     if overwrite_vars:
       self.formkey = self.extract_formkey(r.text)
       self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
+      self.user_id = self.viewer["poeUser"]["id"]
       self.next_data = next_data
-    
+
     return next_data
   
   def get_bot(self, display_name):
@@ -229,6 +230,7 @@ class Client:
       r = request_with_retries(self.session.get, url)
       nodes = r.json()["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
       bots = [node["node"] for node in nodes]
+      bots = bots[:count]
       return {
         "bots": bots,
         "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
