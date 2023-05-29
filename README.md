@@ -38,6 +38,9 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
  - Download conversation history
  - Delete messages
  - Purge an entire conversation
+ - Create custom bots
+ - Edit your custom bots
+ - Use pre-existing third party bots
 
 ## Installation:
 You can install this library by running the following command:
@@ -100,7 +103,7 @@ print(json.dumps(client.bot_names, indent=2))
 
 Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. Claude-instant-100k (c2_100k) is completely inaccessible for free accounts. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
 
-#### Using 3rd Party Bots
+#### Using 3rd Party Bots:
 To get a list of 3rd party bots, use `client.explore_bots`, which accepts the following arguments:
  - `end_cursor = None` - The cursor to use when fetching the list. 
  - `count = 25` - The number of bots that is returned.
@@ -185,7 +188,7 @@ You can use the `client.send_message` function to send a message to a chatbot, w
  - `chatbot` - The codename of the chatbot. (example: `capybara`)
  - `message` - The message to send to the chatbot.
  - `with_chat_break = False` - Whether the conversation context should be cleared.
- - `timeout = 20` - The max number of seconds in between recieved chunks until a `RuntimeError` is raised. 
+ - `timeout = 20` - The max number of seconds in between received chunks until a `RuntimeError` is raised. 
 
 The function is a generator which returns the most recent version of the generated message whenever it is updated.
 
@@ -325,12 +328,23 @@ You'd also want to change `poe.client_identifier` to match the user-agent that y
 
 ### Setting a Custom Device ID:
 If you want to change the device ID that is being spoofed, you can use the `poe.set_device_id`, which accepts the following arguments:
- - `user_id` - The user ID of the account you want to change the device ID for.
- - `device_id` - The new device ID. This is a standard 32 character UUID string.
+ - `user_id` - The user ID of the account you want to change the device ID for. The user ID can be found at `client.viewer["poeUser"]["id"]`.
+ - `device_id` - The new device ID. This is a 32 character UUID string in the following format: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
+```python
+poe.set_device_id("UGMlVXqlcLYyMOATMDsKNTMz", "6d659b04-043a-41f8-97c7-fb7d7fe9ad34")
+```
 
 The device IDs are saved to `~/.config/poe-api/device_id.json` on Unix-like systems, and `C:\Users\<user>\AppData\Roaming\poe-api\device_id.json` on Windows.
 
 Additionally, the `poe.get_device_id` function or `client.device_id` can be used to retrieve the saved device ID.
+```python
+poe.get_device_id("UGMlVXqlcLYyMOATMDsKNTMz")
+#6d659b04-043a-41f8-97c7-fb7d7fe9ad34
+
+client.device_id
+#6d659b04-043a-41f8-97c7-fb7d7fe9ad34
+```
 
 ## Copyright: 
 This program is licensed under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.txt). Most code, with the exception of the GraphQL queries, has been written by me, [ading2210](https://github.com/ading2210).
@@ -341,11 +355,11 @@ The `client.get_remaining_messages` function was written by [Snowad14](https://g
 
 Detection avoidance and fetching the third party bots has been done by [acheong08](https://github.com/acheong08/) in [PR #79](https://github.com/ading2210/poe-api/pull/79).
 
-Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licenced under the ISC License. 
+Most of the GraphQL queries are taken from [muharamdani/poe](https://github.com/muharamdani/poe), which is licensed under the ISC License. 
 
 ### Copyright Notice:
 ```
-ading2210/poe-api: a reverse engineered Python API wrapepr for Quora's Poe
+ading2210/poe-api: a reverse engineered Python API wrapper for Quora's Poe
 Copyright (C) 2023 ading2210
 
 This program is free software: you can redistribute it and/or modify
