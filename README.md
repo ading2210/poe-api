@@ -55,7 +55,7 @@ python3 examples/temporary_message.py "TOKEN_HERE"
 ```
 
 ### Finding Your Token:
-Log into [Poe](https://poe.com) on any web browser, then open your browser's developer tools (also known as "inspect") and look for the value of the `p-b` cookie in the following menus:
+Log into [Poe](https://poe.com) on any desktop web browser, then open your browser's developer tools (also known as "inspect") and look for the value of the `p-b` cookie in the following menus:
  - Chromium: Devtools > Application > Cookies > poe.com
  - Firefox: Devtools > Storage > Cookies
  - Safari: Devtools > Storage > Cookies
@@ -180,7 +180,7 @@ Bot API related arguments:
 
 A full example of how to create and edit bots is located at `examples/create_bot.py`.
 ```python
-edit_result = client.edit_bot(1086981, "bot_handle_here", base_model="beaver")
+edit_result = client.edit_bot(1086981, "bot_handle_here", base_model="a2")
 ```
 
 #### Sending Messages:
@@ -324,7 +324,10 @@ The following headers will be ignored and overwritten:
 
 Previously, this was done through `poe.user_agent`, but that variable is now completely ignored.
 
-You'd also want to change `poe.client_identifier` to match the user-agent that you have set. See the [Python-TLS-Client documentation](https://github.com/FlorianREGAZ/Python-Tls-Client#examples) for some examples.
+You'd also want to change `poe.client_identifier` to match the user-agent that you have set. See the [Python-TLS-Client documentation](https://github.com/FlorianREGAZ/Python-Tls-Client#examples) for some sample values. Keep in mind that spoofing Chrome/Firefox versions >= 110 may be detectable. 
+```python
+poe.client_identifier = "chrome_107"
+```
 
 ### Setting a Custom Device ID:
 If you want to change the device ID that is being spoofed, you can use the `poe.set_device_id`, which accepts the following arguments:
@@ -339,10 +342,10 @@ The device IDs are saved to `~/.config/poe-api/device_id.json` on Unix-like syst
 
 Additionally, the `poe.get_device_id` function or `client.device_id` can be used to retrieve the saved device ID.
 ```python
-poe.get_device_id("UGMlVXqlcLYyMOATMDsKNTMz")
+>>> poe.get_device_id("UGMlVXqlcLYyMOATMDsKNTMz")
 #6d659b04-043a-41f8-97c7-fb7d7fe9ad34
 
-client.device_id
+>>> client.device_id
 #6d659b04-043a-41f8-97c7-fb7d7fe9ad34
 ```
 

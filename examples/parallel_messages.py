@@ -5,6 +5,7 @@ import threading
 import time
 
 #send multiple messages and get their responses
+#note: this is not recommended anymore due to the risk of a ban
 
 token = sys.argv[1]
 poe.logger.setLevel(logging.INFO)

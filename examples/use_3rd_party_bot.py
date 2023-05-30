@@ -2,6 +2,8 @@ import poe
 import sys
 import logging
 
+#download a list of third party bots and send a message to one of them
+
 poe.logger.setLevel(logging.INFO)
 token = sys.argv[1]
 client = poe.Client(token)

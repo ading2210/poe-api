@@ -217,6 +217,13 @@ class Client:
     self.bot_names = self.get_bot_names()          
     return bots
   
+  def get_bot_by_codename(self, bot_codename):
+    if bot_codename in self.bots:
+      return self.bots[bot_codename]
+    
+    #todo: cache this so it isn't re-downloaded every time
+    return self.get_bot(bot_codename)
+
   def get_bot_names(self):
     bot_names = {}
     for bot_nickname in self.bots:
@@ -251,7 +258,7 @@ class Client:
       }
   
   def get_remaining_messages(self, chatbot):
-    chat_data = self.get_bot(self.bot_names[chatbot])
+    chat_data = self.get_bot_by_codename(chatbot)
     return chat_data["defaultBotObject"]["messageLimit"]["numMessagesRemaining"]
       
   def get_channel_data(self, channel=None):
@@ -397,11 +404,7 @@ class Client:
       self.setup_connection()
       self.connect_ws()
     
-    if chatbot in self.bots:
-      chat_id = self.bots[chatbot]["chatId"]
-    else:
-      chat_id = self.get_bot(chatbot)["chatId"]
-
+    chat_id = self.get_bot_by_codename(chatbot)["chatId"]
     message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,
       "query": message,
@@ -455,16 +458,20 @@ class Client:
   def send_chat_break(self, chatbot):
     logger.info(f"Sending chat break to {chatbot}")
     result = self.send_query("AddMessageBreakMutation", {
-      "chatId": self.bots[chatbot]["chatId"]}
+      "chatId": self.get_bot_by_codename(chatbot)["chatId"]}
     )
     return result["data"]["messageBreakCreate"]["message"]
 
   def get_message_history(self, chatbot, count=25, cursor=None):
     logger.info(f"Downloading {count} messages from {chatbot}")
-
+    
     messages = []
     if cursor == None:
-      chat_data = self.get_bot(self.bot_names[chatbot])
+      if not chatbot in self.bots:
+        chat_data = self.get_bot(chatbot)
+      else:
+        chat_data = self.get_bot(self.bot_names[chatbot])
+
       if not chat_data["messagesConnection"]["edges"]:
         return []
       messages = chat_data["messagesConnection"]["edges"][:count]
@@ -486,7 +493,7 @@ class Client:
     result = self.send_query("ChatListPaginationQuery", {
       "count": count,
       "cursor": cursor,
-      "id": self.bots[chatbot]["id"]
+      "id": self.get_bot_by_codename(chatbot)["id"]
     })
     query_messages = result["data"]["node"]["messagesConnection"]["edges"]
     messages = query_messages + messages
