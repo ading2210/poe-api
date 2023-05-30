@@ -193,9 +193,9 @@ class Client:
     else:
       next_data = self.next_data
 
-    if not "availableBots" in self.viewer:
+    if not "viewerBotList" in self.viewer:
       raise RuntimeError("Invalid token or no bots are available.")
-    bot_list = self.viewer["availableBots"]
+    bot_list = self.viewer["viewerBotList"]
 
     threads = []
     bots = {}
@@ -446,7 +446,7 @@ class Client:
           continue
 
       #update info about response
-      message["text_new"] = message["text"][len(last_text) :]
+      message["text_new"] = message["text"][len(last_text):]
       last_text = message["text"]
       message_id = message["messageId"]
 
@@ -474,7 +474,7 @@ class Client:
 
       if not chat_data["messagesConnection"]["edges"]:
         return []
-      messages = chat_data["messagesConnection"]["edges"][:count]
+      messages = chat_data["messagesConnection"]["edges"][count:]
       cursor = chat_data["messagesConnection"]["pageInfo"]["startCursor"]
       count -= len(messages)
 
