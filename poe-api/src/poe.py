@@ -1,5 +1,6 @@
 import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random, os
-import tls_client as requests
+import requests
+import tls_client as requests_tls
 import secrets
 import websocket
 import uuid
@@ -98,7 +99,11 @@ class Client:
   def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier):
     self.device_id = device_id
     self.proxy = proxy
-    self.session = requests.Session(client_identifier=client_identifier)
+    
+    if client_identifier:
+      self.session = requests_tls.Session(client_identifier=client_identifier)
+    else:
+      self.session = requests.Session()
         
     if proxy:
       self.session.proxies = {
@@ -474,7 +479,7 @@ class Client:
 
       if not chat_data["messagesConnection"]["edges"]:
         return []
-      messages = chat_data["messagesConnection"]["edges"][count:]
+      messages = chat_data["messagesConnection"]["edges"][-count:]
       cursor = chat_data["messagesConnection"]["pageInfo"]["startCursor"]
       count -= len(messages)
 
