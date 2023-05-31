@@ -395,8 +395,12 @@ class Client:
 
   def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
     # if there is another active message, wait until it has finished sending
+    timer = 0
     while None in self.active_messages.values():
       time.sleep(0.01)
+      timer += 0.01
+      if timer > timeout:
+        raise RuntimeError("Timed out waiting for other messages to send.")
 
     # None indicates that a message is still in progress
     self.active_messages["pending"] = None
