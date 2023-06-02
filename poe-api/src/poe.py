@@ -97,6 +97,11 @@ class Client:
   settings_url = "https://poe.com/api/settings"
   
   def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier):
+    self.ws_connecting = False
+    self.ws_connected = False
+    self.ws_error = False
+    self.reconnect_count = 0
+
     self.device_id = device_id
     self.proxy = proxy
     
@@ -332,7 +337,17 @@ class Client:
     self.ws.run_forever(**kwargs)
 
   def connect_ws(self):
+    if self.ws_connected:
+      return
+
+    if self.ws_connecting:
+      while not self.ws_connected:
+        time.sleep(0.01)
+      return
+
+    self.ws_connecting = True
     self.ws_connected = False
+
     self.ws = websocket.WebSocketApp(
       self.get_websocket_url(), 
       header={"User-Agent": user_agent},
@@ -343,24 +358,37 @@ class Client:
     )
     t = threading.Thread(target=self.ws_run_thread, daemon=True)
     t.start()
+
+    if self.reconnect_count >= 5:
+      self.reconnect_count = 0
+      self.setup_connection()
+
     while not self.ws_connected:
       time.sleep(0.01)
   
   def disconnect_ws(self):
     if self.ws:
       self.ws.close()
+    self.ws_connecting = False
     self.ws_connected = False
   
   def on_ws_connect(self, ws):
+    self.ws_connecting = False
     self.ws_connected = True
   
   def on_ws_close(self, ws, close_status_code, close_message):
+    self.ws_connecting = False
     self.ws_connected = False
     logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
+    if self.ws_error:
+      self.ws_error = False
+      self.reconnect_count += 1
+      self.connect_ws()
   
   def on_ws_error(self, ws, error):
-    self.disconnect_ws()
-    self.connect_ws()
+    self.ws_connecting = False
+    self.ws_connected = False
+    self.ws_error = True
 
   def on_message(self, ws, msg):
     try:
@@ -408,11 +436,11 @@ class Client:
     logger.info(f"Sending message to {chatbot}: {message}")
 
     # reconnect websocket
-    if not self.ws_connected:
-      self.disconnect_ws()
-      self.setup_connection()
-      self.connect_ws()
-    
+    while self.ws_error:
+      time.sleep(0.01)
+
+    self.connect_ws()
+
     chat_id = self.get_bot_by_codename(chatbot)["chatId"]
     message_data = self.send_query("SendMessageMutation", {
       "bot": chatbot,
