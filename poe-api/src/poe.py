@@ -95,32 +95,22 @@ class Client:
   gql_recv_url = "https://poe.com/api/receive_POST"
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
-  
+
   def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier):
     self.ws_connecting = False
     self.ws_connected = False
     self.ws_error = False
-    self.reconnect_count = 0
+    self.connect_count = 0
+    self.setup_count = 0
 
+    self.token = token
     self.device_id = device_id
     self.proxy = proxy
-    
-    if client_identifier:
-      self.session = requests_tls.Session(client_identifier=client_identifier)
-    else:
-      self.session = requests.Session()
-        
-    if proxy:
-      self.session.proxies = {
-        "http": self.proxy,
-        "https": self.proxy
-      }
-      logger.info(f"Proxy enabled: {self.proxy}")
+    self.client_identifier = client_identifier
 
     self.active_messages = {}
     self.message_queues = {}
 
-    self.session.cookies.set("p-b", token, domain="poe.com")
     self.headers = {**headers, **{
       "Referrer": "https://poe.com/",
       "Origin": "https://poe.com",
@@ -129,17 +119,40 @@ class Client:
       "Sec-Fetch-Mode": "cors",
       "Sec-Fetch-Site": "same-origin",
     }}
-    self.session.headers.update(self.headers)
 
-    self.setup_connection()
     self.connect_ws()
 
+  def setup_session(self):
+    print("setting up session")
+    if self.client_identifier:
+      self.session = requests_tls.Session(client_identifier=self.client_identifier)
+    else:
+      self.session = requests.Session()
+
+    if self.proxy:
+      self.session.proxies = {
+        "http": self.proxy,
+        "https": self.proxy
+      }
+      logger.info(f"Proxy enabled: {self.proxy}")
+
+    self.session.cookies.set("p-b", self.token, domain="poe.com")
+    self.session.headers.update(self.headers)
+
   def setup_connection(self):
+    if self.setup_count % 5 == 0:
+      self.setup_session()
+
+    self.setup_count += 1
+
     self.ws_domain = f"tch{random.randint(1, 1e6)}"
     self.next_data = self.get_next_data(overwrite_vars=True)
     self.channel = self.get_channel_data()
-    self.bots = self.get_bots(download_next_data=False)
-    self.bot_names = self.get_bot_names()
+
+    if not hasattr(self, 'bots'):
+      self.bots = self.get_bots(download_next_data=False)
+    if not hasattr(self, 'bot_names'):
+      self.bot_names = self.get_bot_names()
 
     if self.device_id is None:
       self.device_id = self.get_device_id()
@@ -336,7 +349,7 @@ class Client:
 
     self.ws.run_forever(**kwargs)
 
-  def connect_ws(self):
+  def connect_ws(self, timeout=5):
     if self.ws_connected:
       return
 
@@ -348,29 +361,41 @@ class Client:
     self.ws_connecting = True
     self.ws_connected = False
 
-    self.ws = websocket.WebSocketApp(
-      self.get_websocket_url(), 
+    if self.connect_count % 5 == 0:
+      self.setup_connection()
+
+    self.connect_count += 1
+
+    ws = websocket.WebSocketApp(
+      self.get_websocket_url(),
       header={"User-Agent": user_agent},
       on_message=self.on_message,
       on_open=self.on_ws_connect,
       on_error=self.on_ws_error,
       on_close=self.on_ws_close
     )
+
+    self.ws = ws
+
     t = threading.Thread(target=self.ws_run_thread, daemon=True)
     t.start()
 
-    if self.reconnect_count >= 5:
-      self.reconnect_count = 0
-      self.setup_connection()
-
+    timer = 0
     while not self.ws_connected:
       time.sleep(0.01)
+      timer += 0.01
+      if timer > timeout:
+        self.ws_connecting = False
+        self.ws_connected = False
+        self.ws_error = True
+        ws.close()
+        raise RuntimeError("Timed out waiting for websocket to connect.")
   
   def disconnect_ws(self):
-    if self.ws:
-      self.ws.close()
     self.ws_connecting = False
     self.ws_connected = False
+    if self.ws:
+      self.ws.close()
   
   def on_ws_connect(self, ws):
     self.ws_connecting = False
@@ -382,7 +407,6 @@ class Client:
     logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
     if self.ws_error:
       self.ws_error = False
-      self.reconnect_count += 1
       self.connect_ws()
   
   def on_ws_error(self, ws, error):
@@ -433,13 +457,13 @@ class Client:
     # None indicates that a message is still in progress
     self.active_messages["pending"] = None
 
-    logger.info(f"Sending message to {chatbot}: {message}")
-
     # reconnect websocket
     while self.ws_error:
       time.sleep(0.01)
 
     self.connect_ws()
+
+    logger.info(f"Sending message to {chatbot}: {message}")
 
     chat_id = self.get_bot_by_codename(chatbot)["chatId"]
     message_data = self.send_query("SendMessageMutation", {
