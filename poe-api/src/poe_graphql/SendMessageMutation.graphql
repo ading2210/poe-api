@@ -4,8 +4,10 @@ mutation chatHelpers_sendMessageMutation_Mutation(
   $query: String!
   $source: MessageSource
   $withChatBreak: Boolean!
+  $clientNonce: String
+  $sdid: String
 ) {
-  messageEdgeCreate(chatId: $chatId, bot: $bot, query: $query, source: $source, withChatBreak: $withChatBreak) {
+  messageEdgeCreate(chatId: $chatId, bot: $bot, query: $query, source: $source, withChatBreak: $withChatBreak, clientNonce: $clientNonce, sdid: $sdid) {
     chatBreak {
       cursor
       node {
@@ -29,6 +31,8 @@ mutation chatHelpers_sendMessageMutation_Mutation(
         suggestedReplies
         creationTime
         state
+        clientNonce
+        contentType
         chat {
           shouldShowDisclaimer
           id
@@ -36,5 +40,12 @@ mutation chatHelpers_sendMessageMutation_Mutation(
       }
       id
     }
+    bot {
+      id
+      messageLimit {
+        dailySent
+      }
+    }
+    status
   }
 }

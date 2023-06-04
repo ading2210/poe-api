@@ -25,9 +25,7 @@ mutation CreateBotMain_poeBotCreate_Mutation(
 
 fragment BotHeader_bot on Bot {
   displayName
-  messageLimit {
-    dailyLimit
-  }
+  isLimitedAccess
   ...BotImage_bot
   ...BotLink_bot
   ...IdAnnotation_node
@@ -70,4 +68,5 @@ fragment botHelpers_useDeletion_bot on Bot {
 fragment botHelpers_useViewerCanAccessPrivateBot on Bot {
   isPrivateBot
   viewerIsCreator
+  isSystemBot
 }

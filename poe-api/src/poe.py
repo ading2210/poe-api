@@ -123,7 +123,7 @@ class Client:
     self.connect_ws()
 
   def setup_session(self):
-    print("setting up session")
+    logger.info("Setting up session...")
     if self.client_identifier:
       self.session = requests_tls.Session(client_identifier=self.client_identifier)
     else:
@@ -149,9 +149,9 @@ class Client:
     self.next_data = self.get_next_data(overwrite_vars=True)
     self.channel = self.get_channel_data()
 
-    if not hasattr(self, 'bots'):
+    if not hasattr(self, "bots"):
       self.bots = self.get_bots(download_next_data=False)
-    if not hasattr(self, 'bot_names'):
+    if not hasattr(self, "bot_names"):
       self.bot_names = self.get_bot_names()
 
     if self.device_id is None:
@@ -402,9 +402,10 @@ class Client:
     self.ws_connected = True
   
   def on_ws_close(self, ws, close_status_code, close_message):
+    logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
+
     self.ws_connecting = False
     self.ws_connected = False
-    logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
     if self.ws_error:
       self.ws_error = False
       self.connect_ws()

@@ -1,0 +1,8 @@
+mutation SettingsDeleteAllMessagesButton_deleteUserMessagesMutation_Mutation {
+  deleteUserMessages {
+    viewer {
+      uid
+      id
+    }
+  }
+}
