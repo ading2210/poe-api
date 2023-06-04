@@ -522,7 +522,7 @@ class Client:
     result = self.send_query("AddMessageBreakMutation", {
       "chatId": self.get_bot_by_codename(chatbot)["chatId"]}
     )
-    return result["data"]["messageBreakCreate"]["message"]
+    return result["data"]["messageBreakEdgeCreate"]["message"]
 
   def get_message_history(self, chatbot, count=25, cursor=None):
     logger.info(f"Downloading {count} messages from {chatbot}")
