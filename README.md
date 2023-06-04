@@ -19,6 +19,8 @@ This is a reverse engineered API wrapper for Quora's Poe, which allows you free 
     + [Downloading Conversation History](#downloading-conversation-history)
     + [Deleting Messages](#deleting-messages)
     + [Purging a Conversation](#purging-a-conversation)
+    + [Purging All Conversations](#purging-all-conversations)
+    + [Getting the Remaining Messages](#getting-the-remaining-messages)
   * [Misc](#misc)
     + [Changing the Logging Level](#changing-the-logging-level)
     + [Setting a Custom User-Agent](#setting-a-custom-user-agent)
@@ -131,6 +133,11 @@ print(json.dumps(client.explore_bots(count=1), indent=2))
   "end_cursor": "1000172"
 }
 """
+```
+
+To get a specific third party bot, you can use `client.get_bot_by_codename`, which accept's the bot's codename as its only argument.
+```python
+client.get_bot_by_codename("JapaneseTutor")
 ```
 
 Since display names are the same as the codenames for custom bots, you can simply pass the bot's display name into `client.send_message` to send it a message.
@@ -278,11 +285,23 @@ client.purge_conversation("capybara", count=10)
 client.purge_conversation("capybara")
 ```
 
+#### Purging All Conversations:
+To purge every conversation in your account, use the `client.purge_all_conversations` function. This function doesn't need any arguments.
+
+```python
+>>> client.purge_all_conversations()
+```
+
 #### Getting the Remaining Messages:
 To get the number of messages remaining in the quota for a conversation, use the `client.get_remaining_messages` function. This function accepts the following arguments:
  - `chatbot` - The codename of the chatbot.
 
 The function will return the number of messages remaining, or `None` if the bot does not have a quota.
+
+```python
+>>> client.get_remaining_messages("beaver")
+1
+```
 
 ### Misc:
 #### Changing the Logging Level:

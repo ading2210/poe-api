@@ -642,5 +642,9 @@ class Client:
       raise RuntimeError(f"Poe returned an error while trying to edit a bot: {data['status']}")
     self.get_bots()
     return data
+  
+  def purge_all_conversations(self):
+    logger.info("Purging all conversations")
+    self.send_query("DeleteUserMessagesMutation", {})
 
 load_queries()

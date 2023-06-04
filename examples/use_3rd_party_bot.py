@@ -20,3 +20,4 @@ print(f"Bot name: {bot_name}")
 message = "Summarize the GNU GPL v3"
 for chunk in client.send_message(bots["bots"][-1].get("displayName"), message, with_chat_break=True):
   print(chunk["text_new"], end="", flush=True)
+print()
