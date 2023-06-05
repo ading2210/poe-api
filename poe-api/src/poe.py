@@ -509,54 +509,28 @@ class Client:
     return messages
 
   def get_latest_messages(self, chatbot, count=25, cursor=None):
-    logger.info(f"Downloading {count} messages from {chatbot}")
+    return self.get_message_history(chatbot, count=count, cursor=cursor)[::-1]
 
-    messages = []
-    if cursor == None:
-      chat_data = self.get_bot(self.bot_names[chatbot])
-      if not chat_data["messagesConnection"]["edges"]:
-        return []
-      messages = chat_data["messagesConnection"]["edges"][-count:][::-1]
-      cursor = chat_data["messagesConnection"]["pageInfo"]["startCursor"]
-      count -= len(messages)
-
-    cursor = str(cursor)
-    if count > 50:
-      messages = self.get_message_history(chatbot, count=50, cursor=cursor)[::-1] + messages
-      while count > 0:
-        count -= 50
-        new_cursor = messages[0]["cursor"]
-        new_messages = self.get_message_history(chatbot, min(50, count), cursor=new_cursor)[::-1]
-        messages = new_messages + messages
-      return messages
-    elif count <= 0:
-      return messages
-
-    result = self.send_query("ChatListPaginationQuery", {
-      "count": count,
-      "cursor": cursor,
-      "id": self.bots[chatbot]["id"]
-    })
-    query_messages = result["data"]["node"]["messagesConnection"]["edges"][::-1]
-    messages = query_messages + messages
-    return messages
-
-  def get_all_messages(self, chatbot, cursor=None):
+  def get_all_messages(self, chatbot, cursor=cursor):
     logger.info(f"Downloading all messages from {chatbot}")
 
     messages = []
     if cursor is None:
-      chat_data = self.get_bot(self.bot_names[chatbot])
+      if chatbot not in self.bots:
+        chat_data = self.get_bot(chatbot)
+      else:
+        chat_data = self.get_bot(self.bot_names[chatbot])
+
       if not chat_data["messagesConnection"]["edges"]:
         return []
-      messages = chat_data["messagesConnection"]["edges"]
+        
       cursor = chat_data["messagesConnection"]["pageInfo"]["startCursor"]
 
     cursor = str(cursor)
-    new_messages = self.get_message_history(chatbot, cursor=cursor)
+    new_messages = self.get_all_messages(chatbot, cursor=cursor)
     messages = new_messages + messages
 
-    if cursor == "":
+    if not new_messages:
       return messages
 
     return messages
