@@ -216,15 +216,16 @@ class Client:
     else:
       next_data = self.next_data
 
-    if not "viewerBotList" in self.viewer:
+    if not "availableBots" in self.viewer:
       raise RuntimeError("Invalid token or no bots are available.")
-    bot_list = self.viewer["viewerBotList"]
+    bot_list_url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/index.json'
+    bot_list = self.viewer["availableBotsConnection"]["edges"]
 
     threads = []
     bots = {}
 
     def get_bot_thread(bot):
-      chat_data = self.get_bot(bot["displayName"])
+      chat_data = self.get_bot(bot["node"]["displayName"])
       bots[chat_data["defaultBotObject"]["nickname"]] = chat_data
 
     for bot in bot_list:
