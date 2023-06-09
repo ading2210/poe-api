@@ -216,7 +216,7 @@ class Client:
     else:
       next_data = self.next_data
 
-    if not "availableBots" in self.viewer:
+    if not "availableBotsConnection" in self.viewer:
       raise RuntimeError("Invalid token or no bots are available.")
     bot_list_url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/index.json'
     bot_list = self.viewer["availableBotsConnection"]["edges"]
