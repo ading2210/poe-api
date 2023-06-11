@@ -345,8 +345,12 @@ class Client:
       kwargs = {
         "proxy_type": proxy_parsed.scheme,
         "http_proxy_host": proxy_parsed.hostname,
-        "http_proxy_port": proxy_parsed.port
+        "http_proxy_port": proxy_parsed.port,
       }
+
+      # auth if exists
+      if proxy_parsed.username and proxy_parsed.password:
+        kwargs["http_proxy_auth"] = (proxy_parsed.username, proxy_parsed.password)
 
     self.ws.run_forever(**kwargs)
 
