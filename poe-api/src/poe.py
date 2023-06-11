@@ -345,7 +345,7 @@ class Client:
       kwargs = {
         "proxy_type": proxy_parsed.scheme,
         "http_proxy_host": proxy_parsed.hostname,
-        "http_proxy_port": proxy_parsed.port,
+        "http_proxy_port": proxy_parsed.port
       }
 
       # auth if exists
