@@ -348,6 +348,10 @@ class Client:
         "http_proxy_port": proxy_parsed.port
       }
 
+      # auth if exists
+      if proxy_parsed.username and proxy_parsed.password:
+        kwargs["http_proxy_auth"] = (proxy_parsed.username, proxy_parsed.password)
+
     self.ws.run_forever(**kwargs)
 
   def connect_ws(self, timeout=5):
