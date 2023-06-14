@@ -90,6 +90,86 @@ def get_saved_device_id(user_id):
   
   return device_id
 
+class WebsocketHandler:
+  def __init__(self, client):
+    self.client = client
+    self.message_callback = client.message_callback
+
+    self.ws_connected = False
+    self.connect_ws()
+  
+  def connect_ws(self):
+    logger.info("Connecting websocket...")
+    self.ws_connected = False
+
+    ws = websocket.WebSocketApp(
+      self.client.get_websocket_url(),
+      header={"User-Agent": user_agent},
+      on_message=self.on_message,
+      on_open=self.on_ws_connect,
+      on_error=self.on_ws_error,
+      on_close=self.on_ws_close
+    )
+
+    self.ws = ws
+
+    t = threading.Thread(target=self.ws_run_thread, daemon=True)
+    t.start()
+    
+    timer = 0
+    while not self.ws_connected:
+      time.sleep(0.01)
+      timer += 0.01
+      if timer > 20:
+        self.ws_connected = False
+        ws.close()
+        raise RuntimeError("Timed out waiting for websocket to connect.")
+  
+  def ws_run_thread(self):
+    kwargs = {}
+    if self.client.proxy:
+      proxy_parsed = urlparse(self.client.proxy)
+      kwargs = {
+        "proxy_type": proxy_parsed.scheme,
+        "http_proxy_host": proxy_parsed.hostname,
+        "http_proxy_port": proxy_parsed.port
+      }
+
+      # auth if exists
+      if proxy_parsed.username and proxy_parsed.password:
+        kwargs["http_proxy_auth"] = (proxy_parsed.username, proxy_parsed.password)
+
+    self.ws.run_forever(**kwargs)
+
+  def on_ws_connect(self, ws):
+    self.ws_connected = True
+  
+  def on_ws_error(self, ws, error):
+    self.ws_connected = False
+  
+  def on_ws_close(self, ws, close_status_code, close_message):
+    logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
+
+    self.ws_connected = False
+    self.connect_ws()
+
+  def disconnect_ws(self):
+    self.ws_connected = False
+    if self.ws:
+      self.ws.close()
+
+  def on_message(self, ws, msg):
+    try:
+      data = json.loads(msg)
+      if not "messages" in data:
+        return
+    except Exception:
+      logger.error(traceback.format_exc())
+      self.disconnect_ws()
+      self.connect_ws()
+    
+    self.message_callback(data)
+
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
   gql_recv_url = "https://poe.com/api/receive_POST"
@@ -97,16 +177,15 @@ class Client:
   settings_url = "https://poe.com/api/settings"
 
   def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier):
-    self.ws_connecting = False
-    self.ws_connected = False
-    self.ws_error = False
-    self.connect_count = 0
-    self.setup_count = 0
-
     self.token = token
     self.device_id = device_id
     self.proxy = proxy
     self.client_identifier = client_identifier
+
+    if self.client_identifier:
+      self.session = requests_tls.Session(client_identifier=self.client_identifier)
+    else:
+      self.session = requests.Session()
 
     self.active_messages = {}
     self.message_queues = {}
@@ -120,15 +199,6 @@ class Client:
       "Sec-Fetch-Site": "same-origin",
     }}
 
-    self.connect_ws()
-
-  def setup_session(self):
-    logger.info("Setting up session...")
-    if self.client_identifier:
-      self.session = requests_tls.Session(client_identifier=self.client_identifier)
-    else:
-      self.session = requests.Session()
-
     if self.proxy:
       self.session.proxies = {
         "http": self.proxy,
@@ -139,20 +209,15 @@ class Client:
     self.session.cookies.set("p-b", self.token, domain="poe.com")
     self.session.headers.update(self.headers)
 
+    self.setup_connection()
+
   def setup_connection(self):
-    if self.setup_count % 5 == 0:
-      self.setup_session()
-
-    self.setup_count += 1
-
     self.ws_domain = f"tch{random.randint(1, 1e6)}"
     self.next_data = self.get_next_data(overwrite_vars=True)
     self.channel = self.get_channel_data()
 
-    if not hasattr(self, "bots"):
-      self.bots = self.get_bots(download_next_data=False)
-    if not hasattr(self, "bot_names"):
-      self.bot_names = self.get_bot_names()
+    self.bots = self.get_bots(download_next_data=False)
+    self.bot_names = self.get_bot_names()
 
     if self.device_id is None:
       self.device_id = self.get_device_id()
@@ -163,6 +228,8 @@ class Client:
     }
     self.gql_headers = {**self.gql_headers, **self.headers}
     self.subscribe()
+
+    self.ws_handler = WebsocketHandler(self)
   
   def get_device_id(self):
     user_id = self.viewer["poeUser"]["id"]
@@ -354,102 +421,25 @@ class Client:
 
     self.ws.run_forever(**kwargs)
 
-  def connect_ws(self, timeout=5):
-    if self.ws_connected:
-      return
+  def message_callback(self, data):
+    for message_str in data["messages"]:
+      message_data = json.loads(message_str)
+      if message_data["message_type"] != "subscriptionUpdate":
+        continue
+      message = message_data["payload"]["data"]["messageAdded"]
 
-    if self.ws_connecting:
-      while not self.ws_connected:
-        time.sleep(0.01)
-      return
+      copied_dict = self.active_messages.copy()
+      for key, value in copied_dict.items():
+        #add the message to the appropriate queue
+        if value == message["messageId"] and key in self.message_queues:
+          self.message_queues[key].put(message)
+          return
 
-    self.ws_connecting = True
-    self.ws_connected = False
-
-    if self.connect_count % 5 == 0:
-      self.setup_connection()
-
-    self.connect_count += 1
-
-    ws = websocket.WebSocketApp(
-      self.get_websocket_url(),
-      header={"User-Agent": user_agent},
-      on_message=self.on_message,
-      on_open=self.on_ws_connect,
-      on_error=self.on_ws_error,
-      on_close=self.on_ws_close
-    )
-
-    self.ws = ws
-
-    t = threading.Thread(target=self.ws_run_thread, daemon=True)
-    t.start()
-
-    timer = 0
-    while not self.ws_connected:
-      time.sleep(0.01)
-      timer += 0.01
-      if timer > timeout:
-        self.ws_connecting = False
-        self.ws_connected = False
-        self.ws_error = True
-        ws.close()
-        raise RuntimeError("Timed out waiting for websocket to connect.")
-  
-  def disconnect_ws(self):
-    self.ws_connecting = False
-    self.ws_connected = False
-    if self.ws:
-      self.ws.close()
-  
-  def on_ws_connect(self, ws):
-    self.ws_connecting = False
-    self.ws_connected = True
-  
-  def on_ws_close(self, ws, close_status_code, close_message):
-    logger.warn(f"Websocket closed with status {close_status_code}: {close_message}")
-
-    self.ws_connecting = False
-    self.ws_connected = False
-    if self.ws_error:
-      self.ws_error = False
-      self.connect_ws()
-  
-  def on_ws_error(self, ws, error):
-    self.ws_connecting = False
-    self.ws_connected = False
-    self.ws_error = True
-
-  def on_message(self, ws, msg):
-    try:
-      data = json.loads(msg)
-
-      if not "messages" in data:
-        return
-
-      for message_str in data["messages"]:
-        message_data = json.loads(message_str)
-        if message_data["message_type"] != "subscriptionUpdate":
-          continue
-        message = message_data["payload"]["data"]["messageAdded"]
-
-        copied_dict = self.active_messages.copy()
-        for key, value in copied_dict.items():
-          #add the message to the appropriate queue
-          if value == message["messageId"] and key in self.message_queues:
-            self.message_queues[key].put(message)
-            return
-
-          #indicate that the response id is tied to the human message id
-          elif key != "pending" and value == None and message["state"] != "complete":
-            self.active_messages[key] = message["messageId"]
-            self.message_queues[key].put(message)
-            return
-
-    except Exception:
-      logger.error(traceback.format_exc())
-      self.disconnect_ws()
-      self.connect_ws()
+        #indicate that the response id is tied to the human message id
+        elif key != "pending" and value == None and message["state"] != "complete":
+          self.active_messages[key] = message["messageId"]
+          self.message_queues[key].put(message)
+          return
 
   def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
     # if there is another active message, wait until it has finished sending
@@ -462,12 +452,6 @@ class Client:
 
     # None indicates that a message is still in progress
     self.active_messages["pending"] = None
-
-    # reconnect websocket
-    while self.ws_error:
-      time.sleep(0.01)
-
-    self.connect_ws()
 
     logger.info(f"Sending message to {chatbot}: {message}")
 
@@ -489,7 +473,7 @@ class Client:
       human_message = message_data["data"]["messageEdgeCreate"]["message"]
       human_message_id = human_message["node"]["messageId"]
     except TypeError:
-      raise RuntimeError(f"An unknown error occured. Raw response data: {message_data}")
+      raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
 
     # indicate that the current message is waiting for a response
     self.active_messages[human_message_id] = None
