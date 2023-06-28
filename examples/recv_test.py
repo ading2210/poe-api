@@ -2,11 +2,12 @@ import poe
 import logging
 
 poe.logger.setLevel(logging.INFO)
-client = poe.Client("SqX7oTPz0qV1GKgkLEsCmA%3D%3D")
+# input your token
+client = poe.Client("")
 
 import time
 
-request = 300
+request = 600
 wait_time = 600 / request
 for i in range(request):
   start_time = time.time()

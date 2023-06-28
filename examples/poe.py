@@ -65,6 +65,7 @@ def generate_payload(query_name, variables):
   }
 
 def request_with_retries(method, *args, **kwargs):
+  logger.info(f'Post: {args}')
   attempts = kwargs.get("attempts") or 10
   url = args[0]
   for i in range(attempts):
