@@ -129,6 +129,7 @@ class Client:
     self.ws_error = False
     self.connect_count = 0
     self.setup_count = 0
+    self.request_count = 0
 
     self.token = token
     self.device_id = device_id
@@ -482,7 +483,7 @@ class Client:
       self.disconnect_ws()
       self.connect_ws()
 
-  def send_message(self, chatbot, message, with_chat_break=False, timeout=20, recv = False):
+  def send_message(self, chatbot, message, with_chat_break=False, timeout=20):
     # if there is another active message, wait until it has finished sending
     timer = 0
     while None in self.active_messages.values():
@@ -550,8 +551,12 @@ class Client:
 
       yield message
     
+    # wait 2 senconds after sending the request
+    time.sleep(2)
+    self.request_count += 1
+
     # send recv_post after receiving the last message
-    if recv:
+    if self.request_count % 3 == 0:
       time.sleep(0.5)
       self.send_query("recv", {
         "bot": chatbot,
