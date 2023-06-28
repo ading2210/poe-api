@@ -195,7 +195,7 @@ class Client:
 
     if overwrite_vars:
       self.formkey = self.extract_formkey(r.text)
-      self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
+      self.viewer = next_data["props"]["pageProps"]["data"]["viewer"]
       self.user_id = self.viewer["poeUser"]["id"]
       self.next_data = next_data
 
@@ -206,7 +206,7 @@ class Client:
     
     r = request_with_retries(self.session.get, url)
 
-    chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
+    chat_data = r.json()["pageProps"]["data"]["chatOfBotDisplayName"]
     return chat_data
     
   def get_bots(self, download_next_data=True):
@@ -259,12 +259,12 @@ class Client:
     if not end_cursor:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
       r = request_with_retries(self.session.get, url)
-      nodes = r.json()["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
+      nodes = r.json()["pageProps"]["data"]["exploreBotsConnection"]["edges"]
       bots = [node["node"] for node in nodes]
       bots = bots[:count]
       return {
         "bots": bots,
-        "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
+        "end_cursor": r.json()["pageProps"]["data"]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
       }
 
     else:
