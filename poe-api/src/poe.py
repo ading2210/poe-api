@@ -207,9 +207,11 @@ class Client:
   def get_bot(self, display_name):
     url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{display_name}.json'
     
-    r = request_with_retries(self.session.get, url)
-
-    chat_data = r.json()["pageProps"]["payload"]["chatOfBotDisplayName"]
+    r = request_with_retries(self.session.get, url).json()
+    if "payload" in r["pageProps"]:
+      chat_data = r["pageProps"]["payload"]["chatOfBotDisplayName"]
+    else:
+      chat_data = r["pageProps"]["data"]["chatOfBotDisplayName"]
     return chat_data
     
   def get_bots(self, download_next_data=True):
@@ -261,13 +263,18 @@ class Client:
   def explore_bots(self, end_cursor=None, count=25):
     if not end_cursor:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
-      r = request_with_retries(self.session.get, url)
-      nodes = r.json()["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
+      r = request_with_retries(self.session.get, url).json()
+      if "payload" in r["pageProps"]:
+        key = "payload"
+        nodes = r["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
+      else:
+        key = "data"
+        nodes = r["pageProps"]["data"]["exploreBotsConnection"]["edges"]
       bots = [node["node"] for node in nodes]
       bots = bots[:count]
       return {
         "bots": bots,
-        "end_cursor": r.json()["pageProps"]["payload"]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
+        "end_cursor": r["pageProps"][key]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
       }
 
     else:
