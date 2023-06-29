@@ -195,7 +195,10 @@ class Client:
 
     if overwrite_vars:
       self.formkey = self.extract_formkey(r.text)
-      self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
+      if "payload" in next_data["props"]["pageProps"].keys():
+        self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
+      else:
+        self.viewer = next_data["props"]["pageProps"]["data"]["viewer"]
       self.user_id = self.viewer["poeUser"]["id"]
       self.next_data = next_data
 
