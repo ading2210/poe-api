@@ -195,7 +195,7 @@ class Client:
 
     if overwrite_vars:
       self.formkey = self.extract_formkey(r.text)
-      if "payload" in next_data["props"]["pageProps"].keys():
+      if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
       else:
         self.viewer = next_data["props"]["pageProps"]["data"]["viewer"]
@@ -207,11 +207,11 @@ class Client:
   def get_bot(self, display_name):
     url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{display_name}.json'
     
-    r = request_with_retries(self.session.get, url).json()
-    if "payload" in r["pageProps"]:
-      chat_data = r["pageProps"]["payload"]["chatOfBotDisplayName"]
+    data = request_with_retries(self.session.get, url).json()
+    if "payload" in data["pageProps"]:
+      chat_data = data["pageProps"]["payload"]["chatOfBotDisplayName"]
     else:
-      chat_data = r["pageProps"]["data"]["chatOfBotDisplayName"]
+      chat_data = data["pageProps"]["data"]["chatOfBotDisplayName"]
     return chat_data
     
   def get_bots(self, download_next_data=True):
