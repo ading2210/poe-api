@@ -4,6 +4,7 @@ import tls_client as requests_tls
 import secrets
 import websocket
 import uuid
+import random
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -33,12 +34,38 @@ def load_queries():
       queries[path.stem] = f.read()
 
 def generate_payload(query_name, variables):
+  if "recv" == query_name:
+    if random.random() > 0.9:
+      return [
+          {
+            "category": "poe/bot_response_speed",
+            "data": variables,
+          },
+          {
+            "category": "poe/statsd_event",
+            "data": {
+              "key": "poe.speed.web_vitals.INP",
+              "value": random.randint(100, 125),
+              "category": "time",
+              "path": "/[handle]",
+              "extra_data": {},
+            },
+          },
+        ]
+    else:
+        return [
+          {
+            "category": "poe/bot_response_speed",
+            "data": variables,
+          }
+        ] 
   return {
     "query": queries[query_name],
     "variables": variables
   }
 
 def request_with_retries(method, *args, **kwargs):
+  logger.info(f'Post: {args}')
   attempts = kwargs.get("attempts") or 10
   url = args[0]
   for i in range(attempts):
@@ -102,6 +129,7 @@ class Client:
     self.ws_error = False
     self.connect_count = 0
     self.setup_count = 0
+    self.request_count = 0
 
     self.token = token
     self.device_id = device_id
@@ -321,7 +349,11 @@ class Client:
       }
       headers = {**self.gql_headers, **headers}
       
-      r = request_with_retries(self.session.post, self.gql_url, data=payload, headers=headers)
+      if query_name == "recv":
+        r = request_with_retries(self.session.post, self.gql_recv_url, data=payload, headers=headers)
+        return None
+      else:
+        r = request_with_retries(self.session.post, self.gql_url, data=payload, headers=headers)
       
       data = r.json()
       if data["data"] == None:
@@ -528,6 +560,27 @@ class Client:
       message_id = message["messageId"]
 
       yield message
+    
+    # wait 2 senconds after sending the request
+    time.sleep(2)
+    self.request_count += 1
+
+    # send recv_post after receiving the last message
+    if self.request_count % 3 == 0:
+      time.sleep(0.5)
+      self.send_query("recv", {
+        "bot": chatbot,
+        "time_to_first_typing_indicator": 300, # randomly select
+        "time_to_first_subscription_response": 600,
+        "time_to_full_bot_response": 1100,
+        "full_response_length": len(last_text) + 1,
+        "full_response_word_count": len(last_text.split(" ")) + 1,
+        "human_message_id": human_message_id,
+        "bot_message_id": self.active_messages[human_message_id],
+        "chat_id": chat_id,
+        "bot_response_status": "success",
+      })
+      time.sleep(0.5)
 
     del self.active_messages[human_message_id]
     del self.message_queues[human_message_id]
