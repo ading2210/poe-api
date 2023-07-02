@@ -606,7 +606,7 @@ class Client:
             del self.active_messages[human_message_id]
             del self.message_queues[human_message_id]
 
-        threading.Thread(target=finish).start()
+        threading.Thread(target=finish, daemon=True).start()
 
     def send_chat_break(self, chatbot):
         logger.info(f"Sending chat break to {chatbot}")
