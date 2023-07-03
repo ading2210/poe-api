@@ -209,9 +209,9 @@ class Client:
     for pair in cipher_pairs:
       formkey_index, key_index = map(int, pair)
       formkey_list[formkey_index] = key_text[key_index]
-    formkey = "".join(formkey_list)
+    formkey = "".join(formkey_list)[:-1] # credit to @aditiaryan on realizing my mistake
     
-    return formkey[-1]
+    return formkey
 
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
