@@ -211,7 +211,7 @@ class Client:
       formkey_list[formkey_index] = key_text[key_index]
     formkey = "".join(formkey_list)
     
-    return formkey
+    return formkey[-1]
 
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
@@ -237,9 +237,9 @@ class Client:
     
     data = request_with_retries(self.session.get, url).json()
     if "payload" in data["pageProps"]:
-      chat_data = data["pageProps"]["payload"]["chatOfBotDisplayName"]
+      chat_data = data["pageProps"]["payload"]["chatOfBotHandle"]
     else:
-      chat_data = data["pageProps"]["data"]["chatOfBotDisplayName"]
+      chat_data = data["pageProps"]["data"]["chatOfBotHandle"]
     return chat_data
     
   def get_bots(self, download_next_data=True):
