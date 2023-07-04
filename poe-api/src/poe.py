@@ -61,7 +61,6 @@ def generate_recv_payload(variables):
       },
     })
 
-  print(payload)
   return payload
 
 
