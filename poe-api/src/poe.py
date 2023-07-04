@@ -209,7 +209,7 @@ class Client:
     for pair in cipher_pairs:
       formkey_index, key_index = map(int, pair)
       formkey_list[formkey_index] = key_text[key_index]
-    formkey = "".join(formkey_list)
+    formkey = "".join(formkey_list)[:-1] # credit to @aditiaryan on realizing my mistake
     
     return formkey
 
@@ -237,9 +237,9 @@ class Client:
     
     data = request_with_retries(self.session.get, url).json()
     if "payload" in data["pageProps"]:
-      chat_data = data["pageProps"]["payload"]["chatOfBotDisplayName"]
+      chat_data = data["pageProps"]["payload"]["chatOfBotHandle"]
     else:
-      chat_data = data["pageProps"]["data"]["chatOfBotDisplayName"]
+      chat_data = data["pageProps"]["data"]["chatOfBotHandle"]
     return chat_data
     
   def get_bots(self, download_next_data=True):
