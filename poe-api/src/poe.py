@@ -136,6 +136,7 @@ class Client:
 
     self.active_messages = {}
     self.message_queues = {}
+    self.message_suggestions = {}
 
     self.headers = {**headers, **{
       "Referrer": "https://poe.com/",
@@ -473,6 +474,14 @@ class Client:
           continue
         message = message_data["payload"]["data"]["messageAdded"]
 
+        if 'suggestedReplies' in message and type(message['suggestedReplies']) == list and len(message['suggestedReplies']) > 0:
+          suggestion_dict = self.message_suggestions.get(message['messageId'], None)
+          if suggestion_dict != None:
+            new_suggestions = [x for x in message['suggestedReplies'] if x not in suggestion_dict['suggestions']]
+            suggestion_dict['suggestions'].extend(new_suggestions)
+            for suggestion in new_suggestions:
+                suggestion_dict['callback'](suggestion)
+
         copied_dict = self.active_messages.copy()
         for key, value in copied_dict.items():
           #add the message to the appropriate queue
@@ -491,7 +500,7 @@ class Client:
       self.disconnect_ws()
       self.connect_ws()
 
-  def send_message(self, chatbot, message, with_chat_break=False, timeout=20, async_recv=True):
+  def send_message(self, chatbot, message, with_chat_break=False, timeout=20, async_recv=True, suggest_callback=None):
     # if there is another active message, wait until it has finished sending
     timer = 0
     while None in self.active_messages.values():
@@ -556,6 +565,10 @@ class Client:
       message["text_new"] = message["text"][len(last_text):]
       last_text = message["text"]
       message_id = message["messageId"]
+
+      # set a suggestion callback on response
+      if callable(suggest_callback) and self.message_suggestions.get(message_id, None) == None:
+        self.message_suggestions[message_id] = dict(callback=suggest_callback, suggestions=[])
 
       yield message
     
