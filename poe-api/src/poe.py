@@ -136,7 +136,7 @@ class Client:
 
     self.active_messages = {}
     self.message_queues = {}
-    self.message_suggestions = {}
+    self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
       "Referrer": "https://poe.com/",
@@ -474,13 +474,10 @@ class Client:
           continue
         message = message_data["payload"]["data"]["messageAdded"]
 
-        if 'suggestedReplies' in message and type(message['suggestedReplies']) == list and len(message['suggestedReplies']) > 0:
-          suggestion_dict = self.message_suggestions.get(message['messageId'], None)
-          if suggestion_dict != None:
-            new_suggestions = [x for x in message['suggestedReplies'] if x not in suggestion_dict['suggestions']]
-            suggestion_dict['suggestions'].extend(new_suggestions)
-            for suggestion in new_suggestions:
-                suggestion_dict['callback'](suggestion)
+        if "suggestedReplies" in message and type(message["suggestedReplies"]) == list and len(message["suggestedReplies"]) > 0:
+          self.suggestion_callbacks[message["messageId"]](message["suggestedReplies"][-1])
+          if len(message["suggestedReplies"]) >= 3:
+            del self.suggestion_callbacks[message["messageId"]]
 
         copied_dict = self.active_messages.copy()
         for key, value in copied_dict.items():
@@ -567,8 +564,8 @@ class Client:
       message_id = message["messageId"]
 
       # set a suggestion callback on response
-      if callable(suggest_callback) and self.message_suggestions.get(message_id, None) == None:
-        self.message_suggestions[message_id] = dict(callback=suggest_callback, suggestions=[])
+      if callable(suggest_callback):
+        self.suggestion_callbacks[message_id] = suggest_callback
 
       yield message
     
