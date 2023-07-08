@@ -475,7 +475,7 @@ class Client:
         message = message_data["payload"]["data"]["messageAdded"]
 
         #handle suggested replies
-        if "suggestedReplies" in message and type(message["suggestedReplies"]) == list and len(message["suggestedReplies"]) > 0:
+        if "suggestedReplies" in message and type(message["suggestedReplies"]) == list and len(message["suggestedReplies"]) > 0 and message["messageId"] in self.suggestion_callbacks:
           self.suggestion_callbacks[message["messageId"]](message["suggestedReplies"][-1])
           if len(message["suggestedReplies"]) >= 3:
             del self.suggestion_callbacks[message["messageId"]]
