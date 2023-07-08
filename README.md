@@ -197,7 +197,7 @@ You can use the `client.send_message` function to send a message to a chatbot, w
  - `with_chat_break = False` - Whether the conversation context should be cleared.
  - `timeout = 20` - The max number of seconds in between received chunks until a `RuntimeError` is raised. 
  - `async_recv = True` - Whether or not to make the `receive_POST` request async. If this is disabled, then there will be an extra wait of about 3 seconds after the message is complete.
- - `suggest_callback = None` - Callback for suggested replies, which will be run with the suggested reply as the only argument.
+ - `suggest_callback = None` - Callback for suggested replies. See `examples/send_message.py` for an example on how to use this.
 
 The function is a generator which returns the most recent version of the generated message whenever it is updated.
 

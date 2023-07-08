@@ -474,6 +474,7 @@ class Client:
           continue
         message = message_data["payload"]["data"]["messageAdded"]
 
+        #handle suggested replies
         if "suggestedReplies" in message and type(message["suggestedReplies"]) == list and len(message["suggestedReplies"]) > 0:
           self.suggestion_callbacks[message["messageId"]](message["suggestedReplies"][-1])
           if len(message["suggestedReplies"]) >= 3:
@@ -535,7 +536,7 @@ class Client:
       human_message = message_data["data"]["messageEdgeCreate"]["message"]
       human_message_id = human_message["node"]["messageId"]
     except TypeError:
-      raise RuntimeError(f"An unknown error occured. Raw response data: {message_data}")
+      raise RuntimeError(f"An unknown error occurred. Raw response data: {message_data}")
 
     # indicate that the current message is waiting for a response
     self.active_messages[human_message_id] = None
@@ -564,7 +565,7 @@ class Client:
       message_id = message["messageId"]
 
       # set a suggestion callback on response
-      if callable(suggest_callback):
+      if callable(suggest_callback) and not message_id in self.suggestion_callbacks:
         self.suggestion_callbacks[message_id] = suggest_callback
 
       yield message
