@@ -340,8 +340,6 @@ class Client:
     for i in range(attempts):
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
-      
-      print(json_data)
 
       base_string = payload + self.gql_headers["poe-formkey"] + "WpuLMiXEKKE98j56k"
       
