@@ -156,6 +156,7 @@ You can create a new bot using the `client.create_bot` function, which accepts t
  - `markdown_rendering = True` - Whether or not to enable markdown rendering for the bot's responses.
  - `suggested_replies = False` - Whether or not the bot should suggest possible replies after each response.
  - `private = False` - Whether or not the bot should be private.
+ - `temperature = None`: - The temperature for the new bot.
 
 Use these arguments if you want the new bot to use your own API (as detailed [here](https://github.com/poe-platform/api-bot-tutorial)):
  - `api_key = None` - The API key for the new bot. 
@@ -182,6 +183,7 @@ You can edit a custom bot using the `client.edit_bot` function, which accepts th
  - `markdown_rendering = True` - Whether or not to enable markdown rendering for the bot's responses.
  - `suggested_replies = False` - Whether or not the bot should suggest possible replies after each response.
  - `private = False` - Whether or not the bot should be private.
+ - `temperature = None`: - The new temperature for the this bot.
 
 Bot API related arguments:
  - `api_key = None` - The new API key for the bot. 

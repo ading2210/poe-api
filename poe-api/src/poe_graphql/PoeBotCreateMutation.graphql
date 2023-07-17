@@ -72,4 +72,3 @@ fragment botHelpers_useViewerCanAccessPrivateBot on Bot {
   viewerIsCreator
   isSystemBot
 }
-

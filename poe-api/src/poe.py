@@ -357,7 +357,7 @@ class Client:
       
       data = r.json()
       if data["data"] == None:
-        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20) | Returned data: {data}')
+        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20) | Response: {data}')
         time.sleep(2)
         continue
 
@@ -675,7 +675,8 @@ class Client:
   def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", 
                   intro_message="", api_key=None, api_bot=False, api_url=None,
                   prompt_public=True, pfp_url=None, linkification=False,
-                  markdown_rendering=True, suggested_replies=False, private=False):
+                  markdown_rendering=True, suggested_replies=False, private=False,
+                  temperature=None):
     result = self.send_query("PoeBotCreateMutation", {
       "baseBot": base_model,
       "displayName": display_name,
@@ -691,7 +692,8 @@ class Client:
       "hasLinkification": linkification,
       "hasMarkdownRendering": markdown_rendering,
       "hasSuggestedReplies": suggested_replies,
-      "isPrivateBot": private
+      "isPrivateBot": private,
+      "temperature": temperature
     })
 
     data = result["data"]["poeBotCreate"]
