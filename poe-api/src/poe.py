@@ -357,8 +357,7 @@ class Client:
       
       data = r.json()
       if data["data"] == None:
-        logger.warn(f"{data}")
-        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20)')
+        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20) | Returned data: {data}')
         time.sleep(2)
         continue
 

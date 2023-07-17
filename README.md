@@ -146,6 +146,7 @@ Since display names are the same as the codenames for custom bots, you can simpl
 You can create a new bot using the `client.create_bot` function, which accepts the following arguments:
  - `handle` - The handle of the new bot.
  - `prompt = ""` - The prompt for the new bot.
+ - `display_name = None` - The display name for the new bot.
  - `base_model = "chinchilla"` - The model that the new bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude).
  - `description = ""` - The description for the new bot.
  - `intro_message = ""` - The intro message for the new bot. If this is an empty string then the bot will not have an intro message.
@@ -171,7 +172,8 @@ You can edit a custom bot using the `client.edit_bot` function, which accepts th
  - `bot_id` - The `botId` of the bot to edit.
  - `handle` - The handle of the bot to edit.
  - `prompt` - The prompt for the new bot.
- - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude). Previously, it was possible to set this to `"beaver"` (GPT-4), which would bypass the free account restrictions, but this is now patched.
+ - `display_name = None` - The new display name for the bot.
+ - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude).
  - `description = ""` - The new description for the bot.
  - `intro_message = ""` - The new intro message for the bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
