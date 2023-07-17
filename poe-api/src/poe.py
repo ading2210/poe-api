@@ -38,6 +38,7 @@ def generate_payload(query_name, variables):
     return generate_recv_payload(variables)
   return {
     "query": queries[query_name],
+    "queryName": query_name,
     "variables": variables
   }
 
@@ -231,8 +232,8 @@ class Client:
 
     return next_data
   
-  def get_bot(self, display_name):
-    url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{display_name}.json'
+  def get_bot(self, handle):
+    url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{handle}.json'
     
     data = request_with_retries(self.session.get, url).json()
     if "payload" in data["pageProps"]:
@@ -257,7 +258,7 @@ class Client:
     bots = {}
 
     def get_bot_thread(bot):
-      chat_data = self.get_bot(bot["node"]["displayName"])
+      chat_data = self.get_bot(bot["node"]["handle"])
       bots[chat_data["defaultBotObject"]["nickname"]] = chat_data
 
     for bot in bot_list:
@@ -339,7 +340,7 @@ class Client:
     for i in range(attempts):
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
-      
+
       base_string = payload + self.gql_headers["poe-formkey"] + "WpuLMiXEKKE98j56k"
       
       headers = {
@@ -356,6 +357,7 @@ class Client:
       
       data = r.json()
       if data["data"] == None:
+        logger.warn(f"{data}")
         logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20)')
         time.sleep(2)
         continue
@@ -671,12 +673,13 @@ class Client:
       
     logger.info(f"No more messages left to delete.")
 
-  def create_bot(self, handle, prompt="", base_model="chinchilla", description="", 
+  def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", 
                   intro_message="", api_key=None, api_bot=False, api_url=None,
                   prompt_public=True, pfp_url=None, linkification=False,
                   markdown_rendering=True, suggested_replies=False, private=False):
     result = self.send_query("PoeBotCreateMutation", {
-      "model": base_model,
+      "baseBot": base_model,
+      "displayName": display_name,
       "handle": handle,
       "prompt": prompt,
       "isPromptPublic": prompt_public,
@@ -698,14 +701,15 @@ class Client:
     self.get_bots()
     return data
 
-  def edit_bot(self, bot_id, handle, prompt="", base_model="chinchilla", description="", 
+  def edit_bot(self, bot_id, handle, prompt, display_name=None, base_model="chinchilla", description="", 
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False):
+                markdown_rendering=True, suggested_replies=False, temperature=None):
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
       "handle": handle,
+      "display_name": display_name,
       "prompt": prompt,
       "isPromptPublic": prompt_public,
       "introduction": intro_message,
@@ -716,7 +720,8 @@ class Client:
       "hasLinkification": linkification,
       "hasMarkdownRendering": markdown_rendering,
       "hasSuggestedReplies": suggested_replies,
-      "isPrivateBot": private
+      "isPrivateBot": private,
+      "temperature": temperature
     })
 
     data = result["data"]["poeBotEdit"]

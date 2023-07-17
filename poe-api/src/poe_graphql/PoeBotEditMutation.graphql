@@ -1,6 +1,7 @@
 mutation EditBotMain_poeBotEdit_Mutation(
   $botId: BigInt!
   $handle: String!
+  $displayName: String
   $description: String!
   $introduction: String!
   $isPromptPublic: Boolean!
@@ -13,8 +14,9 @@ mutation EditBotMain_poeBotEdit_Mutation(
   $hasMarkdownRendering: Boolean
   $hasSuggestedReplies: Boolean
   $isPrivateBot: Boolean
+  $temperature: Float
 ) {
-  poeBotEdit(botId: $botId, handle: $handle, description: $description, introduction: $introduction, isPromptPublic: $isPromptPublic, model: $baseBot, promptPlaintext: $prompt, profilePicture: $profilePictureUrl, apiUrl: $apiUrl, apiKey: $apiKey, hasLinkification: $hasLinkification, hasMarkdownRendering: $hasMarkdownRendering, hasSuggestedReplies: $hasSuggestedReplies, isPrivateBot: $isPrivateBot) {
+  poeBotEdit(botId: $botId, handle: $handle, displayName: $displayName, description: $description, introduction: $introduction, isPromptPublic: $isPromptPublic, model: $baseBot, promptPlaintext: $prompt, profilePicture: $profilePictureUrl, apiUrl: $apiUrl, apiKey: $apiKey, hasLinkification: $hasLinkification, hasMarkdownRendering: $hasMarkdownRendering, hasSuggestedReplies: $hasSuggestedReplies, isPrivateBot: $isPrivateBot, temperature: $temperature) {
     status
     bot {
       handle
@@ -22,3 +24,4 @@ mutation EditBotMain_poeBotEdit_Mutation(
     }
   }
 }
+

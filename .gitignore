@@ -2,6 +2,7 @@
 #https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 
 /.vscode
+pyrightconfig.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

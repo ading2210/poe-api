@@ -1,5 +1,6 @@
 mutation CreateBotMain_poeBotCreate_Mutation(
   $model: String!
+  $displayName: String
   $handle: String!
   $prompt: String!
   $isPromptPublic: Boolean!
@@ -13,8 +14,9 @@ mutation CreateBotMain_poeBotCreate_Mutation(
   $hasMarkdownRendering: Boolean
   $hasSuggestedReplies: Boolean
   $isPrivateBot: Boolean
+  $temperature: Float
 ) {
-  poeBotCreate(model: $model, handle: $handle, promptPlaintext: $prompt, isPromptPublic: $isPromptPublic, introduction: $introduction, description: $description, profilePicture: $profilePictureUrl, apiUrl: $apiUrl, apiKey: $apiKey, isApiBot: $isApiBot, hasLinkification: $hasLinkification, hasMarkdownRendering: $hasMarkdownRendering, hasSuggestedReplies: $hasSuggestedReplies, isPrivateBot: $isPrivateBot) {
+  poeBotCreate(model: $model, handle: $handle, displayName: $displayName, promptPlaintext: $prompt, isPromptPublic: $isPromptPublic, introduction: $introduction, description: $description, profilePicture: $profilePictureUrl, apiUrl: $apiUrl, apiKey: $apiKey, isApiBot: $isApiBot, hasLinkification: $hasLinkification, hasMarkdownRendering: $hasMarkdownRendering, hasSuggestedReplies: $hasSuggestedReplies, isPrivateBot: $isPrivateBot, temperature: $temperature) {
     status
     bot {
       id
@@ -53,7 +55,7 @@ fragment BotImage_useProfileImage_bot on Bot {
 }
 
 fragment BotLink_bot on Bot {
-  displayName
+  handle
 }
 
 fragment IdAnnotation_node on Node {
@@ -70,3 +72,4 @@ fragment botHelpers_useViewerCanAccessPrivateBot on Bot {
   viewerIsCreator
   isSystemBot
 }
+
