@@ -93,14 +93,14 @@ print(json.dumps(client.bot_names, indent=2))
 """
 {
   "capybara": "Sage",
-  "a2": "Claude-instant",
-  "nutria": "Dragonfly",
-  "a2_100k": "Claude-instant-100k",
-  "beaver": "GPT-4",
   "chinchilla": "ChatGPT",
-  "a2_2": "Claude+"
-}
-"""
+  "beaver": "GPT-4",
+  "a2_100k": "Claude-instant-100k",
+  "a2": "Claude-instant",
+  "agouti": "ChatGPT-16k",
+  "a2_2": "Claude-2-100k",
+  "acouchy": "Google-PaLM"
+}"""
 ```
 
 Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. Claude-instant-100k (c2_100k) is completely inaccessible for free accounts. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
