@@ -140,12 +140,20 @@ class Client:
     self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
-      "Referrer": "https://poe.com/",
-      "Origin": "https://poe.com",
-      "Host": "poe.com",
-      "Sec-Fetch-Dest": "empty",
-      "Sec-Fetch-Mode": "cors",
-      "Sec-Fetch-Site": "same-origin",
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36 Edg/117.0.0.0',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+      'Cache-Control': 'max-age=0',
+      'Referer': 'https://accounts.google.com/',
+      'Sec-Ch-Ua': '"Microsoft Edge";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
+      'Sec-Ch-Ua-Mobile': '?0',
+      'Sec-Ch-Ua-Platform': '"Windows"',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'same-origin',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1'
     }}
 
     self.connect_ws()
@@ -236,10 +244,7 @@ class Client:
     url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{handle}.json'
     
     data = request_with_retries(self.session.get, url).json()
-    if "payload" in data["pageProps"]:
-      chat_data = data["pageProps"]["payload"]["chatOfBotHandle"]
-    else:
-      chat_data = data["pageProps"]["data"]["chatOfBotHandle"]
+    chat_data = data["pageProps"]["data"]["chatOfBotHandle"]
     return chat_data
     
   def get_bots(self, download_next_data=True):
