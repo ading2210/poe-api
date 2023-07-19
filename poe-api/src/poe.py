@@ -677,13 +677,13 @@ class Client:
       
     logger.info(f"No more messages left to delete.")
 
-  def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="", 
+  def create_bot(self, handle, prompt, display_name=None, base_model="chinchilla", description="",
                   intro_message="", api_key=None, api_bot=False, api_url=None,
                   prompt_public=True, pfp_url=None, linkification=False,
                   markdown_rendering=True, suggested_replies=False, private=False,
                   temperature=None):
     result = self.send_query("PoeBotCreateMutation", {
-      "baseBot": base_model,
+      "model": base_model,
       "displayName": display_name,
       "handle": handle,
       "prompt": prompt,
