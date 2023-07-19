@@ -337,12 +337,13 @@ poe.headers = {
 The following headers will be ignored and overwritten:
 ```python
 {
-  "Referrer": "https://poe.com/",
-  "Origin": "https://poe.com",
-  "Host": "poe.com",
-  "Sec-Fetch-Dest": "empty",
-  "Sec-Fetch-Mode": "cors",
-  "Sec-Fetch-Site": "same-origin"
+  'Cache-Control': 'max-age=0',
+  'Sec-Ch-Ua': '"Microsoft Edge";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'same-origin',
+  'Sec-Fetch-User': '?1',
 }
 ```
 
