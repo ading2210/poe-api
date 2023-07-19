@@ -18,10 +18,9 @@ logger = logging.getLogger()
 user_agent = "This will be ignored! See the README for info on how to set custom headers."
 headers = {
   "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*q=0.8,application/signed-exchange;v=b3;q=0.7',
   "Accept-Encoding": "gzip, deflate, br",
-  "Accept-Language": "en-US,en;q=0.5",
-  "Te": "trailers",
+  'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
   "Upgrade-Insecure-Requests": "1"
 }
 client_identifier = "firefox_102"
@@ -147,7 +146,6 @@ class Client:
       'Cache-Control': 'max-age=0',
       'Sec-Ch-Ua': '"Microsoft Edge";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
       'Sec-Ch-Ua-Mobile': '?0',
-      'Sec-Ch-Ua-Platform': '"Windows"',
       'Sec-Fetch-Dest': 'document',
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'same-origin',
