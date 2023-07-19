@@ -331,7 +331,7 @@ class Client:
     if channel is None:
       channel = self.channel
     query = f'?min_seq={channel["minSeq"]}&channel={channel["channel"]}&hash={channel["channelHash"]}'
-    return f'wss://{self.ws_domain}.tch.{channel["baseHost"]}/up/{channel["boxName"]}/updates'+query
+    return f'ws://{self.ws_domain}.tch.{channel["baseHost"]}/up/{channel["boxName"]}/updates'+query
 
   def send_query(self, query_name, variables, attempts=20):
     for i in range(attempts):
@@ -531,7 +531,7 @@ class Client:
     except Exception as e:
       del self.active_messages["pending"]
       raise e
-    
+
     if not message_data["data"]["messageEdgeCreate"]["message"]:
       raise RuntimeError(f"Daily limit reached for {chatbot}.")
     try:
