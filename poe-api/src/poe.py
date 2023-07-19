@@ -357,7 +357,7 @@ class Client:
       
       data = r.json()
       if data["data"] == None:
-        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20) | Response: {data}')
+        logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/{attempts}) | Response: {data}')
         time.sleep(2)
         continue
 
@@ -499,7 +499,7 @@ class Client:
       self.disconnect_ws()
       self.connect_ws()
 
-  def send_message(self, chatbot, message, with_chat_break=False, timeout=20, async_recv=True, suggest_callback=None):
+  def send_message(self, chatbot, message, with_chat_break=False, timeout=20, async_recv=True, suggest_callback=None, attempts=20):
     # if there is another active message, wait until it has finished sending
     timer = 0
     while None in self.active_messages.values():
@@ -528,7 +528,7 @@ class Client:
       "clientNonce": generate_nonce(),
       "sdid": self.device_id,
       "withChatBreak": with_chat_break,
-    })
+    }, attempts=attempts)
     del self.active_messages["pending"]
 
     if not message_data["data"]["messageEdgeCreate"]["message"]:
@@ -600,14 +600,15 @@ class Client:
     del self.active_messages[human_message_id]
     del self.message_queues[human_message_id]
   
-  def send_chat_break(self, chatbot):
+  def send_chat_break(self, chatbot, attempts=20):
     logger.info(f"Sending chat break to {chatbot}")
     result = self.send_query("AddMessageBreakMutation", {
-      "chatId": self.get_bot_by_codename(chatbot)["chatId"]}
+      "chatId": self.get_bot_by_codename(chatbot)["chatId"]},
+	  attempts=attempts
     )
     return result["data"]["messageBreakEdgeCreate"]["message"]
 
-  def get_message_history(self, chatbot, count=25, cursor=None):
+  def get_message_history(self, chatbot, count=25, cursor=None,attempts=20):
     logger.info(f"Downloading {count} messages from {chatbot}")
     
     messages = []
@@ -639,19 +640,19 @@ class Client:
       "count": count,
       "cursor": cursor,
       "id": self.get_bot_by_codename(chatbot)["id"]
-    })
+    },attempts=attempts)
     query_messages = result["data"]["node"]["messagesConnection"]["edges"]
     messages = query_messages + messages
     return messages
 
-  def delete_message(self, message_ids):
+  def delete_message(self, message_ids,attempts=20):
     logger.info(f"Deleting messages: {message_ids}")
     if not type(message_ids) is list:
       message_ids = [int(message_ids)]
 
     result = self.send_query("DeleteMessageMutation", {
       "messageIds": message_ids
-    })
+    },attempts=attempts)
   
   def purge_conversation(self, chatbot, count=-1):
     logger.info(f"Purging messages from {chatbot}")
@@ -676,7 +677,7 @@ class Client:
                   intro_message="", api_key=None, api_bot=False, api_url=None,
                   prompt_public=True, pfp_url=None, linkification=False,
                   markdown_rendering=True, suggested_replies=False, private=False,
-                  temperature=None):
+                  temperature=None,attempts=20):
     result = self.send_query("PoeBotCreateMutation", {
       "baseBot": base_model,
       "displayName": display_name,
@@ -694,7 +695,7 @@ class Client:
       "hasSuggestedReplies": suggested_replies,
       "isPrivateBot": private,
       "temperature": temperature
-    })
+    },attempts=attempts)
 
     data = result["data"]["poeBotCreate"]
     if data["status"] != "success":
@@ -705,7 +706,8 @@ class Client:
   def edit_bot(self, bot_id, handle, prompt, display_name=None, base_model="chinchilla", description="", 
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None):
+                markdown_rendering=True, suggested_replies=False, temperature=None,
+                attempts=20):
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
@@ -723,7 +725,7 @@ class Client:
       "hasSuggestedReplies": suggested_replies,
       "isPrivateBot": private,
       "temperature": temperature
-    })
+    },attempts=attempts)
 
     data = result["data"]["poeBotEdit"]
     if data["status"] != "success":
