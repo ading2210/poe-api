@@ -147,7 +147,7 @@ You can create a new bot using the `client.create_bot` function, which accepts t
  - `handle` - The handle of the new bot.
  - `prompt = ""` - The prompt for the new bot.
  - `display_name = None` - The display name for the new bot.
- - `base_model = "chinchilla"` - The model that the new bot uses. This must be either `"chinchilla"` (ChatGPT) or `"beaver"` (ChatGPT4)  or `"a2"` (Claude)  or  "a2_2"` (Claude-2-100k).
+ - `base_model = "chinchilla"` - The model that the new bot uses. This must be either `"chinchilla"` (ChatGPT) or `"a2"` (Claude) (or `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k) if you've subscribed).
  - `description = ""` - The description for the new bot.
  - `intro_message = ""` - The intro message for the new bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
@@ -174,7 +174,7 @@ You can edit a custom bot using the `client.edit_bot` function, which accepts th
  - `handle` - The handle of the bot to edit.
  - `prompt` - The prompt for the new bot.
  - `display_name = None` - The new display name for the bot.
- - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude).
+ - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude) (or `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k) if you've subscribed).
  - `description = ""` - The new description for the bot.
  - `intro_message = ""` - The new intro message for the bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 

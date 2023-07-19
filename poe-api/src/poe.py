@@ -18,9 +18,9 @@ logger = logging.getLogger()
 user_agent = "This will be ignored! See the README for info on how to set custom headers."
 headers = {
   "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*q=0.8,application/signed-exchange;v=b3;q=0.7',
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,/;q=0.8",
   "Accept-Encoding": "gzip, deflate, br",
-  'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+  "Accept-Language": "en-US,en;q=0.5",
   "Upgrade-Insecure-Requests": "1"
 }
 client_identifier = "firefox_102"
@@ -146,7 +146,7 @@ class Client:
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'same-origin',
       'Sec-Fetch-User': '?1',
-    }}
+      }}
 
     self.connect_ws()
 
@@ -517,17 +517,21 @@ class Client:
     logger.info(f"Sending message to {chatbot}: {message}")
 
     chat_id = self.get_bot_by_codename(chatbot)["chatId"]
-    message_data = self.send_query("SendMessageMutation", {
-      "bot": chatbot,
-      "query": message,
-      "chatId": chat_id,
-      "source": None,
-      "clientNonce": generate_nonce(),
-      "sdid": self.device_id,
-      "withChatBreak": with_chat_break,
-    })
-    del self.active_messages["pending"]
-
+    try:
+      message_data = self.send_query("SendMessageMutation", {
+        "bot": chatbot,
+        "query": message,
+        "chatId": chat_id,
+        "source": None,
+        "clientNonce": generate_nonce(),
+        "sdid": self.device_id,
+        "withChatBreak": with_chat_break,
+      })
+      del self.active_messages["pending"]
+    except Exception as e:
+      del self.active_messages["pending"]
+      raise e
+    
     if not message_data["data"]["messageEdgeCreate"]["message"]:
       raise RuntimeError(f"Daily limit reached for {chatbot}.")
     try:
