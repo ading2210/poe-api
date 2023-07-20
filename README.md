@@ -62,7 +62,7 @@ Log into [Poe](https://poe.com) on any desktop web browser, then open your brows
  - Firefox: Devtools > Storage > Cookies
  - Safari: Devtools > Storage > Cookies
 
-Note that excessive usage of this library may lead to your account getting banned. It is recommended that you set your own rate limits, and that you use an alt account that you don't value. See [issue #118](https://github.com/ading2210/poe-api/issues/118) for more details.
+Note that excessive usage of this library may lead to your account getting banned. It is recommended that you set your own rate limits, and that you use an alt account that you don't value. See [issue #118](https://github.com/ading2210/poe-api/issues/118) for more details. If your requests are infrequent, the risk for a ban is very low.
 
 ### Using the Client:
 To use this library, simply import `poe` and create a `poe.Client` instance. The Client class accepts the following arguments:
@@ -94,7 +94,7 @@ The client downloads all of the available bots upon initialization and stores th
 print(json.dumps(client.bot_names, indent=2))
 """
 {
-  "capybara": "Sage",
+  "capybara": "Assistant",
   "chinchilla": "ChatGPT",
   "beaver": "GPT-4",
   "a2_100k": "Claude-instant-100k",
@@ -173,12 +173,12 @@ new_bot = client.create_bot(bot_name, "prompt goes here", base_model="a2")
 
 #### Editing a Bot:
 You can edit a custom bot using the `client.edit_bot` function, which accepts the following arguments:
- - `handle` - The new handle for the bot you're editing.
- - `prompt` - The prompt for the new bot.
- - `bot_id = None` - The `botId` of the bot to edit. Either this or `old_handle` must be set.
- - `old_handle = None` - The handle for the bot to edit. 
+ - `bot_id` - The `botId` of the bot to edit. 
+ - `handle` - The handle for the bot you're editing.
+ - `prompt` - The new prompt for the bot.
+ - `new_handle = None` - The new handle for the bot. By default the handle will not change.
  - `display_name = None` - The new display name for the bot.
- - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT) or `"a2"` (Claude). If you've subscribed, you can use `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k)
+ - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT) or `"a2"` (Claude). If you've subscribed, you can use `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k).
  - `description = ""` - The new description for the bot.
  - `intro_message = ""` - The new intro message for the bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 

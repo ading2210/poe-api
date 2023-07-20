@@ -21,7 +21,7 @@ print("new bot created: " + bot_name)
 handle = bot_name.lower()
 bot_id = client.bots[handle]["defaultBotObject"]["botId"]
 edit_result = client.edit_bot(
-  bot_id, handle, prompt, 
+  None, handle, prompt, 
   base_model="chinchilla"
 ) #switch model to ChatGPT
 

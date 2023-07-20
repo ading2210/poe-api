@@ -707,19 +707,19 @@ class Client:
     self.get_bots()
     return data
 
-  def edit_bot(self, handle, prompt, old_handle=None, bot_id=None, display_name=None, base_model="chinchilla", description="",
+  def edit_bot(self, bot_id, handle, prompt, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None):
-    if bot_id is None and old_handle is not None:
-      bot_id = self.get_bot(old_handle)['defaultBotObject']["botId"]
-    elif bot_id is None and old_handle is None:
-      raise Exception("Expected to have at least one of old_handle or bot_id as arguments")
-      
+                markdown_rendering=True, suggested_replies=False, temperature=None, new_handle=None):
+
+    if bot_id is None and handle is not None:
+      bot_id = self.get_bot(handle)["defaultBotObject"]["botId"]
+    new_handle = new_handle or handle
+    
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
-      "handle": handle,
+      "handle": new_handle,
       "displayName": display_name,
       "prompt": prompt,
       "isPromptPublic": prompt_public,
