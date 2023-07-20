@@ -17,13 +17,16 @@ logger = logging.getLogger()
 
 user_agent = "This will be ignored! See the README for info on how to set custom headers."
 headers = {
-  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,/;q=0.8",
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
   "Accept-Encoding": "gzip, deflate, br",
-  "Accept-Language": "en-US,en;q=0.5",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Sec-Ch-Ua": "\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"112\"",
+  "Sec-Ch-Ua-Mobile": "?0",
+  "Sec-Ch-Ua-Platform": "\"Linux\"",
   "Upgrade-Insecure-Requests": "1"
 }
-client_identifier = "firefox_102"
+client_identifier = "chrome112"
 
 def load_queries():
   for path in queries_path.iterdir():
@@ -139,14 +142,15 @@ class Client:
     self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
-      'Cache-Control': 'max-age=0',
-      'Sec-Ch-Ua': '"Microsoft Edge";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
-      'Sec-Ch-Ua-Mobile': '?0',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'same-origin',
-      'Sec-Fetch-User': '?1',
-      }}
+      "Referrer": "https://poe.com/",
+      "Origin": "https://poe.com",
+      "Host": "poe.com",
+      "Cache-Control": "no-cache",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-User": "?1",
+    }}
 
     self.connect_ws()
 
@@ -703,15 +707,15 @@ class Client:
     self.get_bots()
     return data
 
-  def edit_bot(self, handle, prompt, old_handle=None, bot_id=None,display_name=None, base_model="chinchilla", description="",
+  def edit_bot(self, handle, prompt, old_handle=None, bot_id=None, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
                 markdown_rendering=True, suggested_replies=False, temperature=None):
-
     if bot_id is None and old_handle is not None:
       bot_id = self.get_bot(old_handle)['defaultBotObject']["botId"]
     elif bot_id is None and old_handle is None:
       raise Exception("Expected to have at least one of old_handle or bot_id as arguments")
+      
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
