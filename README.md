@@ -173,7 +173,7 @@ new_bot = client.create_bot(bot_name, "prompt goes here", base_model="a2")
 
 #### Editing a Bot:
 You can edit a custom bot using the `client.edit_bot` function, which accepts the following arguments:
- - `bot_id` - The `botId` of the bot to edit. 
+ - `bot_id` - The `botId` of the bot to edit. This can also be set to `None`.
  - `handle` - The handle for the bot you're editing.
  - `prompt` - The new prompt for the bot.
  - `new_handle = None` - The new handle for the bot. By default the handle will not change.

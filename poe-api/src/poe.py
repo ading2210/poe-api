@@ -142,9 +142,6 @@ class Client:
     self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
-      "Referrer": "https://poe.com/",
-      "Origin": "https://poe.com",
-      "Host": "poe.com",
       "Cache-Control": "no-cache",
       "Sec-Fetch-Dest": "document",
       "Sec-Fetch-Mode": "navigate",
