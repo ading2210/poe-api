@@ -1,4 +1,5 @@
 import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random, os
+import quickjs
 import requests
 import tls_client as requests_tls
 import secrets
@@ -199,19 +200,16 @@ class Client:
     return device_id
 
   def extract_formkey(self, html):
-    script_regex = r'<script>(.+)function\(\){return .\.join\(""\)};</script>'
-    script_text = re.search(script_regex, html).group(1)
-    key_regex = r'var .="([0-9a-f]+)",'
-    key_text = re.search(key_regex, script_text).group(1)
-    cipher_regex = r'.\[(\d+)\]=.\[(\d+)\]'
-    cipher_pairs = re.findall(cipher_regex, script_text)
+    script_regex = r'<script>(.+?)</script>'
+    script_text = "window = {};"
+    script_text += "".join(re.findall(script_regex, html))
 
-    formkey_list = [""] * len(cipher_pairs)
-    for pair in cipher_pairs:
-      formkey_index, key_index = map(int, pair)
-      formkey_list[formkey_index] = key_text[key_index]
-    formkey = "".join(formkey_list)[:-1]
+    function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
+    function_text = re.search(function_regex, script_text).group(1)
+    script_text += f"{function_text}();"
 
+    context = quickjs.Context()
+    formkey = context.eval(script_text)
     return formkey
 
   def get_next_data(self, overwrite_vars=False):
