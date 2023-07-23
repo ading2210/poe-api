@@ -199,12 +199,10 @@ class Client:
     return device_id
 
   def extract_formkey(self, html):
-    script_regex = r'<script>if\(.+\)throw new Error;(.+)</script>'
-    script_text = re.search(script_regex, html).group(1)
     key_regex = r'var .="([0-9a-f]+)",'
-    key_text = re.search(key_regex, script_text).group(1)
+    key_text = re.search(key_regex, html).group(1)
     cipher_regex = r'.\[(\d+)\]=.\[(\d+)\]'
-    cipher_pairs = re.findall(cipher_regex, script_text)
+    cipher_pairs = re.findall(cipher_regex, html)
 
     formkey_list = [""] * len(cipher_pairs)
     for pair in cipher_pairs:
@@ -221,9 +219,14 @@ class Client:
     json_regex = r'<script id="__NEXT_DATA__" type="application\/json">(.+?)</script>'
     json_text = re.search(json_regex, r.text).group(1)
     next_data = json.loads(json_text)
+    key_regex = r'(https://[^<]*_app.*?\.js)'
+    key_url = re.search(key_regex, r.text).group(1)
+    s = request_with_retries(self.session.get, key_url)
+    key_regex = r'\+"([a-zA-z0-9]{17})"'
+    self.formkey_salt = re.search(key_regex, s.text).group(1)
 
     if overwrite_vars:
-      self.formkey = self.extract_formkey(r.text)
+      self.formkey = self.extract_formkey(r.text)[:32]
       if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
       else:
@@ -335,7 +338,7 @@ class Client:
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
 
-      base_string = payload + self.gql_headers["poe-formkey"] + "WpuLMiXEKKE98j56k"
+      base_string = payload + self.gql_headers["poe-formkey"] + self.formkey_salt
 
       headers = {
         "content-type": "application/json",
