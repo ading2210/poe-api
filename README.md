@@ -49,6 +49,11 @@ You can install this library by running the following command:
 ```
 pip3 install poe-api
 ```
+This library depends on `quickjs`, which does not have prebuilt binaries available for Python 3.11. Pip will attempt to compile it, but will fail if `python-dev` is not installed.
+
+On Linux, you can install it via the instructions listed here: https://stackoverflow.com/questions/21530577/fatal-error-python-h-no-such-file-or-directory
+
+On Windows and MacOS, `python-dev` should be included with your existing Python installation.
 
 ## Documentation:
 Examples can be found in the `/examples` directory. To run these examples, pass in your token as a command-line argument.
