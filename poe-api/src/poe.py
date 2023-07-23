@@ -1,4 +1,5 @@
 import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random, os
+import quickjs
 import requests
 import tls_client as requests_tls
 import secrets
@@ -17,13 +18,16 @@ logger = logging.getLogger()
 
 user_agent = "This will be ignored! See the README for info on how to set custom headers."
 headers = {
-  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,/;q=0.8",
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
   "Accept-Encoding": "gzip, deflate, br",
-  "Accept-Language": "en-US,en;q=0.5",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Sec-Ch-Ua": "\"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"112\"",
+  "Sec-Ch-Ua-Mobile": "?0",
+  "Sec-Ch-Ua-Platform": "\"Linux\"",
   "Upgrade-Insecure-Requests": "1"
 }
-client_identifier = "firefox_102"
+client_identifier = "chrome112"
 
 def load_queries():
   for path in queries_path.iterdir():
@@ -139,14 +143,12 @@ class Client:
     self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
-      'Cache-Control': 'max-age=0',
-      'Sec-Ch-Ua': '"Microsoft Edge";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
-      'Sec-Ch-Ua-Mobile': '?0',
-      'Sec-Fetch-Dest': 'document',
-      'Sec-Fetch-Mode': 'navigate',
-      'Sec-Fetch-Site': 'same-origin',
-      'Sec-Fetch-User': '?1',
-      }}
+      "Cache-Control": "no-cache",
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-User": "?1",
+    }}
 
     self.connect_ws()
 
@@ -198,19 +200,16 @@ class Client:
     return device_id
 
   def extract_formkey(self, html):
-    script_regex = r'<script>if\(.+\)throw new Error;(.+)</script>'
-    script_text = re.search(script_regex, html).group(1)
-    key_regex = r'var .="([0-9a-f]+)",'
-    key_text = re.search(key_regex, script_text).group(1)
-    cipher_regex = r'.\[(\d+)\]=.\[(\d+)\]'
-    cipher_pairs = re.findall(cipher_regex, script_text)
+    script_regex = r'<script>(.+?)</script>'
+    script_text = "window = {};"
+    script_text += "".join(re.findall(script_regex, html))
 
-    formkey_list = [""] * len(cipher_pairs)
-    for pair in cipher_pairs:
-      formkey_index, key_index = map(int, pair)
-      formkey_list[formkey_index] = key_text[key_index]
-    formkey = "".join(formkey_list)[:-1] # credit to @aditiaryan on realizing my mistake
+    function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
+    function_text = re.search(function_regex, script_text).group(1)
+    script_text += f"{function_text}();"
 
+    context = quickjs.Context()
+    formkey = context.eval(script_text)
     return formkey
 
   def get_next_data(self, overwrite_vars=False):
@@ -289,17 +288,13 @@ class Client:
     if not end_cursor:
       url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/explore_bots.json'
       r = request_with_retries(self.session.get, url).json()
-      if "payload" in r["pageProps"]:
-        key = "payload"
-        nodes = r["pageProps"]["payload"]["exploreBotsConnection"]["edges"]
-      else:
-        key = "data"
-        nodes = r["pageProps"]["data"]["exploreBotsConnection"]["edges"]
+      data = r["pageProps"].get("payload") or r["pageProps"]["data"]
+      nodes = data["exploreBotsConnection"]["edges"]
       bots = [node["node"] for node in nodes]
       bots = bots[:count]
       return {
         "bots": bots,
-        "end_cursor": r["pageProps"][key]["exploreBotsConnection"]["pageInfo" ]["endCursor"],
+        "end_cursor": data["exploreBotsConnection"]["pageInfo" ]["endCursor"],
       }
 
     else:
@@ -338,7 +333,7 @@ class Client:
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
 
-      base_string = payload + self.gql_headers["poe-formkey"] + "WpuLMiXEKKE98j56k"
+      base_string = payload + self.gql_headers["poe-formkey"] + "Jb1hi3fg1MxZpzYfy"
 
       headers = {
         "content-type": "application/json",
@@ -349,9 +344,8 @@ class Client:
       if query_name == "recv":
         r = request_with_retries(self.session.post, self.gql_recv_url, data=payload, headers=headers)
         return None
-      else:
-        r = request_with_retries(self.session.post, self.gql_url, data=payload, headers=headers)
 
+      r = request_with_retries(self.session.post, self.gql_url, data=payload, headers=headers)
       data = r.json()
       if data["data"] == None:
         logger.warn(f'{query_name} returned an error: {data["errors"][0]["message"]} | Retrying ({i+1}/20) | Response: {data}')
@@ -703,19 +697,19 @@ class Client:
     self.get_bots()
     return data
 
-  def edit_bot(self, handle, prompt, old_handle=None, bot_id=None,display_name=None, base_model="chinchilla", description="",
+  def edit_bot(self, bot_id, handle, prompt, display_name=None, base_model="chinchilla", description="",
                 intro_message="", api_key=None, api_url=None, private=False,
                 prompt_public=True, pfp_url=None, linkification=False,
-                markdown_rendering=True, suggested_replies=False, temperature=None):
+                markdown_rendering=True, suggested_replies=False, temperature=None, new_handle=None):
 
-    if bot_id is None and old_handle is not None:
-      bot_id = self.get_bot(old_handle)['defaultBotObject']["botId"]
-    elif bot_id is None and old_handle is None:
-      raise Exception("Expected to have at least one of old_handle or bot_id as arguments")
+    if bot_id is None and handle is not None:
+      bot_id = self.get_bot(handle)["defaultBotObject"]["botId"]
+    new_handle = new_handle or handle
+    
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
-      "handle": handle,
+      "handle": new_handle,
       "displayName": display_name,
       "prompt": prompt,
       "isPromptPublic": prompt_public,

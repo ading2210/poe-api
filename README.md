@@ -49,6 +49,11 @@ You can install this library by running the following command:
 ```
 pip3 install poe-api
 ```
+This library depends on `quickjs`, which does not have prebuilt binaries available for Python 3.11. Pip will attempt to compile it, but will fail if `python-dev` is not installed.
+
+On Linux, you can install it via the instructions listed here: https://stackoverflow.com/questions/21530577/fatal-error-python-h-no-such-file-or-directory
+
+On Windows and MacOS, `python-dev` should be included with your existing Python installation.
 
 ## Documentation:
 Examples can be found in the `/examples` directory. To run these examples, pass in your token as a command-line argument.
@@ -61,6 +66,8 @@ Log into [Poe](https://poe.com) on any desktop web browser, then open your brows
  - Chromium: Devtools > Application > Cookies > poe.com
  - Firefox: Devtools > Storage > Cookies
  - Safari: Devtools > Storage > Cookies
+
+Note that excessive usage of this library may lead to your account getting banned. It is recommended that you set your own rate limits, and that you use an alt account that you don't value. See [issue #118](https://github.com/ading2210/poe-api/issues/118) for more details. If your requests are infrequent, the risk for a ban is very low.
 
 ### Using the Client:
 To use this library, simply import `poe` and create a `poe.Client` instance. The Client class accepts the following arguments:
@@ -92,7 +99,7 @@ The client downloads all of the available bots upon initialization and stores th
 print(json.dumps(client.bot_names, indent=2))
 """
 {
-  "capybara": "Sage",
+  "capybara": "Assistant",
   "chinchilla": "ChatGPT",
   "beaver": "GPT-4",
   "a2_100k": "Claude-instant-100k",
@@ -100,7 +107,8 @@ print(json.dumps(client.bot_names, indent=2))
   "agouti": "ChatGPT-16k",
   "a2_2": "Claude-2-100k",
   "acouchy": "Google-PaLM"
-}"""
+}
+"""
 ```
 
 Note that, on free accounts, Claude+ (a2_2) has a limit of 3 messages per day and GPT-4 (beaver) has a limit of 1 message per day. Claude-instant-100k (c2_100k) is completely inaccessible for free accounts. For all the other chatbots, there seems to be a rate limit of 10 messages per minute.
@@ -147,7 +155,7 @@ You can create a new bot using the `client.create_bot` function, which accepts t
  - `handle` - The handle of the new bot.
  - `prompt = ""` - The prompt for the new bot.
  - `display_name = None` - The display name for the new bot.
- - `base_model = "chinchilla"` - The model that the new bot uses. This must be either `"chinchilla"` (ChatGPT) or `"a2"` (Claude) (or `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k) if you've subscribed).
+ - `base_model = "chinchilla"` - The model that the new bot uses. This must be either `"chinchilla"` (ChatGPT) or `"a2"` (Claude). If you've subscribed, you can use `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k).
  - `description = ""` - The description for the new bot.
  - `intro_message = ""` - The intro message for the new bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
@@ -170,11 +178,12 @@ new_bot = client.create_bot(bot_name, "prompt goes here", base_model="a2")
 
 #### Editing a Bot:
 You can edit a custom bot using the `client.edit_bot` function, which accepts the following arguments:
- - `bot_id` - The `botId` of the bot to edit.
- - `handle` - The handle of the bot to edit.
- - `prompt` - The prompt for the new bot.
+ - `bot_id` - The `botId` of the bot to edit. This can also be set to `None`.
+ - `handle` - The handle for the bot you're editing.
+ - `prompt` - The new prompt for the bot.
+ - `new_handle = None` - The new handle for the bot. By default the handle will not change.
  - `display_name = None` - The new display name for the bot.
- - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT)  or `"a2"` (Claude) (or `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k) if you've subscribed).
+ - `base_model = "chinchilla"` - The new model that the bot uses. This must be either `"chinchilla"` (ChatGPT) or `"a2"` (Claude). If you've subscribed, you can use `"beaver"` (ChatGPT4) or  "a2_2"` (Claude-2-100k).
  - `description = ""` - The new description for the bot.
  - `intro_message = ""` - The new intro message for the bot. If this is an empty string then the bot will not have an intro message.
  - `prompt_public = True` - Whether or not the prompt should be publicly visible. 
@@ -337,13 +346,14 @@ poe.headers = {
 The following headers will be ignored and overwritten:
 ```python
 {
-  'Cache-Control': 'max-age=0',
-  'Sec-Ch-Ua': '"Microsoft Edge";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'same-origin',
-  'Sec-Fetch-User': '?1',
+  "Referrer": "https://poe.com/",
+  "Origin": "https://poe.com",
+  "Host": "poe.com",
+  "Cache-Control": "no-cache",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "same-origin",
+  "Sec-Fetch-User": "?1",
 }
 ```
 
