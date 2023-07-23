@@ -1,5 +1,4 @@
 import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random, os
-import quickjs
 import requests
 import tls_client as requests_tls
 import secrets
@@ -120,6 +119,27 @@ def get_saved_device_id(user_id):
 
   return device_id
 
+
+def extract_formkey(html):
+  script_regex = r"<script>.*?;</script>"
+  script_text = re.findall(script_regex, html)[0]
+  pattern = r'<script>window.\w+=function\(\){return window.\w+\("(\w+)"\);};</script>'
+  match = re.search(pattern, html)
+  if match:
+      key = match.group(1)
+  else:
+      raise Exception("Failed to get key for decoding form key")
+  pattern = r'return q\(\w+,(\[.*?\])\)\['
+  match = re.search(pattern, script_text)
+  if match:
+      js_array_str = match.group(1)
+      js_array = re.findall(r'0x[\da-fA-F]+', js_array_str)  # match hexadecimal numbers
+      index_array = [int(num, 16) for num in js_array]  # convert to decimal
+  else:
+      raise Exception("Failed to decode js_array")
+  return ''.join([key[index] for index in index_array])[:32]
+
+
 class Client:
   gql_url = "https://poe.com/api/gql_POST"
   gql_recv_url = "https://poe.com/api/receive_POST"
@@ -199,19 +219,6 @@ class Client:
     device_id = get_saved_device_id(user_id)
     return device_id
 
-  def extract_formkey(self, html):
-    script_regex = r'<script>(.+?)</script>'
-    script_text = "window = {};"
-    script_text += "".join(re.findall(script_regex, html))
-
-    function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
-    function_text = re.search(function_regex, script_text).group(1)
-    script_text += f"{function_text}();"
-
-    context = quickjs.Context()
-    formkey = context.eval(script_text)
-    return formkey
-
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
 
@@ -221,7 +228,7 @@ class Client:
     next_data = json.loads(json_text)
 
     if overwrite_vars:
-      self.formkey = self.extract_formkey(r.text)
+      self.formkey = extract_formkey(r.text)
       if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
       else:
@@ -705,7 +712,7 @@ class Client:
     if bot_id is None and handle is not None:
       bot_id = self.get_bot(handle)["defaultBotObject"]["botId"]
     new_handle = new_handle or handle
-    
+
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
