@@ -67,7 +67,6 @@ def generate_recv_payload(variables):
 
   return payload
 
-
 def request_with_retries(method, *args, **kwargs):
   attempts = kwargs.get("attempts") or 10
   url = args[0]
@@ -143,12 +142,14 @@ class Client:
     self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
+      "Host": "poe.com",
       "Cache-Control": "no-cache",
       "Sec-Fetch-Dest": "document",
       "Sec-Fetch-Mode": "navigate",
       "Sec-Fetch-Site": "same-origin",
       "Sec-Fetch-User": "?1",
     }}
+    self.formkey_salt = None
 
     self.connect_ws()
 
@@ -201,7 +202,21 @@ class Client:
 
   def extract_formkey(self, html):
     script_regex = r'<script>(.+?)</script>'
-    script_text = "window = {};"
+    script_text = """
+      let QuickJS = undefined, process = undefined;
+      let window = new Proxy({
+        document: {a:1},
+        navigator: {a:1}
+      },{
+        get(obj, prop) {
+          return obj[prop] || true;
+        },
+        set(obj, prop, value) {
+          obj[prop] = value;
+          return true;
+        }
+      });
+    """
     script_text += "".join(re.findall(script_regex, html))
 
     function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
@@ -210,7 +225,7 @@ class Client:
 
     context = quickjs.Context()
     formkey = context.eval(script_text)
-    return formkey
+    return formkey, salt
 
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
@@ -221,7 +236,7 @@ class Client:
     next_data = json.loads(json_text)
 
     if overwrite_vars:
-      self.formkey = self.extract_formkey(r.text)
+      self.formkey, self.formkey_salt = self.extract_formkey(r.text)
       if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
       else:
@@ -333,7 +348,7 @@ class Client:
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
 
-      base_string = payload + self.gql_headers["poe-formkey"] + "Jb1hi3fg1MxZpzYfy"
+      base_string = payload + self.gql_headers["poe-formkey"] + self.formkey_salt
 
       headers = {
         "content-type": "application/json",
