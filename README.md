@@ -76,6 +76,7 @@ To use this library, simply import `poe` and create a `poe.Client` instance. The
  - `device_id = None` - The device ID to use. If this is not specified, it will be randomly generated and stored on the disk. 
  - `headers = headers` - The headers to use. This defaults to the headers specified in `poe.headers`.
  - `client_identifier = client_identifier` - The client identifier that will be passed into the TLS client library. This defaults to the one specified in `poe.client_identifier`.
+ - `formkey = None` - The formkey to use. Only supply this option if initializing the client without it fails. You can find this value by going into your browser's devtools, looking in the network tab for a `gql_POST` request, and taking the value of the `poe-formkey` request header. The formkey that you use must come from a browser that matches the headers that you've set in `poe.headers`. Keep in mind that the default browser is Chromium 112.
 
 Regular Example:
 ```python

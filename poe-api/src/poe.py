@@ -125,7 +125,7 @@ class Client:
   home_url = "https://poe.com"
   settings_url = "https://poe.com/api/settings"
 
-  def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier):
+  def __init__(self, token, proxy=None, headers=headers, device_id=None, client_identifier=client_identifier, formkey=None):
     self.ws_connecting = False
     self.ws_connected = False
     self.ws_error = False
@@ -142,7 +142,6 @@ class Client:
     self.suggestion_callbacks = {}
 
     self.headers = {**headers, **{
-      "Host": "poe.com",
       "Cache-Control": "no-cache",
       "Sec-Fetch-Dest": "document",
       "Sec-Fetch-Mode": "navigate",
@@ -150,6 +149,7 @@ class Client:
       "Sec-Fetch-User": "?1",
     }}
     self.formkey_salt = None
+    self.formkey = formkey
 
     self.connect_ws()
 
@@ -204,10 +204,8 @@ class Client:
   #to the formkey function getting changed a few hours later
   def extract_formkey(self, html, app_script):
     script_regex = r'<script>(.+?)</script>'
-    vars_regex = r'"([a-zA-Z0-9]{10})"\.split'
-    key, value = re.findall(vars_regex, app_script)
-    key = key[::-1]
-    value = value[::-1]
+    vars_regex = r'window\._([a-zA-Z0-9]{10})="([a-zA-Z0-9]{10})"'
+    key, value = re.findall(vars_regex, app_script)[0]
 
     script_text = """
       let QuickJS = undefined, process = undefined;
@@ -237,13 +235,13 @@ class Client:
     json_text = re.search(json_regex, r.text).group(1)
     next_data = json.loads(json_text)
 
-    script_src_regex = r'src="(https://psc2\.cf2\.poecdn\.net/[a-f0-9]{40}/_next/static/chunks/pages/_app-[a-f0-9]{16}\.js)"'
-    script_src = re.search(script_src_regex, r.text).group(1)
-    r2 = request_with_retries(self.session.get, script_src)
-    app_script = r2.text
-
     if overwrite_vars:
-      self.formkey = self.extract_formkey(r.text, app_script)
+      if not self.formkey:
+        script_src_regex = r'src="(https://psc2\.cf2\.poecdn\.net/[a-f0-9]{40}/_next/static/chunks/pages/_app-[a-f0-9]{16}\.js)"'
+        script_src = re.search(script_src_regex, r.text).group(1)
+        r2 = request_with_retries(self.session.get, script_src)
+        self.formkey = self.extract_formkey(r.text, r2.text)
+
       if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
       else:
