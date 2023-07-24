@@ -223,6 +223,8 @@ class Client:
     function_text = re.search(function_regex, script_text).group(1)
     script_text += f"{function_text}();"
 
+    salt = "Jb1hi3fg1MxZpzYfy"
+
     context = quickjs.Context()
     formkey = context.eval(script_text)
     return formkey, salt
