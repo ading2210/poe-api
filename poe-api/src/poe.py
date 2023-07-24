@@ -200,34 +200,34 @@ class Client:
     device_id = get_saved_device_id(user_id)
     return device_id
 
-  def extract_formkey(self, html):
+  #i find it funny how the contents of this function will lead 
+  #to the formkey function getting changed a few hours later
+  def extract_formkey(self, html, app_script):
     script_regex = r'<script>(.+?)</script>'
+    vars_regex = r'"([a-zA-Z0-9]{10})"\.split'
+    key, value = re.findall(vars_regex, app_script)
+    key = key[::-1]
+    value = value[::-1]
+
     script_text = """
       let QuickJS = undefined, process = undefined;
-      let window = new Proxy({
+      let window = {
         document: {a:1},
-        navigator: {a:1}
-      },{
-        get(obj, prop) {
-          return obj[prop] || true;
-        },
-        set(obj, prop, value) {
-          obj[prop] = value;
-          return true;
+        navigator: {
+          userAgent: "a"
         }
-      });
+      };
     """
+    script_text += f"window._{key} = '{value}';"
     script_text += "".join(re.findall(script_regex, html))
 
     function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
     function_text = re.search(function_regex, script_text).group(1)
     script_text += f"{function_text}();"
 
-    salt = "Jb1hi3fg1MxZpzYfy"
-
     context = quickjs.Context()
     formkey = context.eval(script_text)
-    return formkey, salt
+    return formkey
 
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
@@ -237,8 +237,13 @@ class Client:
     json_text = re.search(json_regex, r.text).group(1)
     next_data = json.loads(json_text)
 
+    script_src_regex = r'src="(https://psc2\.cf2\.poecdn\.net/[a-f0-9]{40}/_next/static/chunks/pages/_app-[a-f0-9]{16}\.js)"'
+    script_src = re.search(script_src_regex, r.text).group(1)
+    r2 = request_with_retries(self.session.get, script_src)
+    app_script = r2.text
+
     if overwrite_vars:
-      self.formkey, self.formkey_salt = self.extract_formkey(r.text)
+      self.formkey = self.extract_formkey(r.text, app_script)
       if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
       else:
@@ -350,7 +355,7 @@ class Client:
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
 
-      base_string = payload + self.gql_headers["poe-formkey"] + self.formkey_salt
+      base_string = payload + self.gql_headers["poe-formkey"] + "Jb1hi3fg1MxZpzYfy"
 
       headers = {
         "content-type": "application/json",
