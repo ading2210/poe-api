@@ -26,7 +26,7 @@ setuptools.setup(
     "": "src"
   },
   package_data={
-    "poe": ["*.graphql"]
+    "poe": ["poe_graphql/*.graphql"]
   },
   include_package_data=True,
   install_requires=[
