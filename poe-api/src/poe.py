@@ -200,8 +200,6 @@ class Client:
     device_id = get_saved_device_id(user_id)
     return device_id
 
-  #i find it funny how the contents of this function will lead 
-  #to the formkey function getting changed a few hours later
   def extract_formkey(self, html, app_script):
     script_regex = r'<script>(.+?)</script>'
     vars_regex = r'window\._([a-zA-Z0-9]{10})="([a-zA-Z0-9]{10})"'
@@ -222,10 +220,20 @@ class Client:
     function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
     function_text = re.search(function_regex, script_text).group(1)
     script_text += f"{function_text}();"
-
+    
     context = quickjs.Context()
     formkey = context.eval(script_text)
-    return formkey
+
+    salt = None
+    try:
+      salt_function_regex = r'function (.)\(_0x[0-9a-f]{6},_0x[0-9a-f]{6},_0x[0-9a-f]{6}\)'
+      salt_function = re.search(salt_function_regex, script_text).group(1)
+      salt_script = f"{salt_function}(a=>a, '', '');"
+      salt = context.eval(salt_script)
+    except Exception as e:
+      logger.warn("Failed to obtain poe-tag-id salt: "+str(e))
+
+    return formkey, salt
 
   def get_next_data(self, overwrite_vars=False):
     logger.info("Downloading next_data...")
@@ -240,7 +248,10 @@ class Client:
         script_src_regex = r'src="(https://psc2\.cf2\.poecdn\.net/[a-f0-9]{40}/_next/static/chunks/pages/_app-[a-f0-9]{16}\.js)"'
         script_src = re.search(script_src_regex, r.text).group(1)
         r2 = request_with_retries(self.session.get, script_src)
-        self.formkey = self.extract_formkey(r.text, r2.text)
+        self.formkey, self.formkey_salt = self.extract_formkey(r.text, r2.text)
+      
+      if self.formkey_salt is None:
+        self.formkey_salt = "4LxgHM6KpFqokX0Ox"
 
       if "payload" in next_data["props"]["pageProps"]:
         self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
@@ -353,7 +364,7 @@ class Client:
       json_data = generate_payload(query_name, variables)
       payload = json.dumps(json_data, separators=(",", ":"))
 
-      base_string = payload + self.gql_headers["poe-formkey"] + "Jb1hi3fg1MxZpzYfy"
+      base_string = payload + self.gql_headers["poe-formkey"] + self.formkey_salt
 
       headers = {
         "content-type": "application/json",
