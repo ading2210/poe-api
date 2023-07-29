@@ -6,6 +6,7 @@ import secrets
 import websocket
 import uuid
 import random
+from functools import cache
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -200,7 +201,7 @@ class Client:
     device_id = get_saved_device_id(user_id)
     return device_id
 
-  #i find it funny how the contents of this function will lead 
+  #i find it funny how the contents of this function will lead
   #to the formkey function getting changed a few hours later
   def extract_formkey(self, html, app_script):
     script_regex = r'<script>(.+?)</script>'
@@ -290,6 +291,7 @@ class Client:
     self.bot_names = self.get_bot_names()
     return bots
 
+  @cache
   def get_bot_by_codename(self, bot_codename):
     if bot_codename in self.bots:
       return self.bots[bot_codename]
@@ -725,7 +727,7 @@ class Client:
     if bot_id is None and handle is not None:
       bot_id = self.get_bot(handle)["defaultBotObject"]["botId"]
     new_handle = new_handle or handle
-    
+
     result = self.send_query("PoeBotEditMutation", {
       "baseBot": base_model,
       "botId": bot_id,
