@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 parent_path = Path(__file__).resolve().parent
-queries_path = parent_path / "poe_graphql"
+queries_path = parent_path / "poe_graphql" / "queries.json"
 queries = {}
 
 logging.basicConfig()
@@ -30,17 +30,19 @@ headers = {
 client_identifier = "chrome112"
 
 def load_queries():
-  for path in queries_path.iterdir():
-    if path.suffix != ".graphql":
-      continue
-    with open(path) as f:
-      queries[path.stem] = f.read()
+  try:
+    queries = json.loads(queries_path.read_text())
+  except FileNotFoundError:
+    logger.error("GraphQL queries file not found.")
+    queries = {}
 
 def generate_payload(query_name, variables):
   if query_name == "recv":
     return generate_recv_payload(variables)
   return {
-    "query": queries[query_name],
+    "extensions": {
+      "hash": queries[query_name]
+    },  
     "queryName": query_name,
     "variables": variables
   }
@@ -393,11 +395,13 @@ class Client:
       "subscriptions": [
         {
           "subscriptionName": "messageAdded",
-          "query": queries["MessageAddedSubscription"]
+          "queryHash": queries["MessageAddedSubscription"],
+          "query": None
         },
         {
           "subscriptionName": "viewerStateUpdated",
-          "query": queries["ViewerStateUpdatedSubscription"]
+          "queryHash": queries["ViewerStateUpdatedSubscription"],
+          "query": None
         }
       ]
     })

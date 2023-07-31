@@ -43,6 +43,5 @@ if __name__ == "__main__":
       query_name = query_name[0].upper()+query_name[1:]
       queries[query_name] = query_hash
 
-  out_path = poe.queries_path / "queries.json"
   json_text = json.dumps(queries, indent=2, sort_keys=True)
-  out_path.write_text(json_text)
+  poe.queries_path.write_text(json_text)
