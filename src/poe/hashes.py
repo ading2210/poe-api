@@ -20,18 +20,24 @@ if __name__ == "__main__":
   r = session.get("https://poe.com/login?redirect_url=%2F")
   manifest_regex = r'https://psc2\.cf2\.poecdn\.net/[0-9a-f]{40}/_next/static/\S{21}/_buildManifest\.js'
   base_regex = r'https://psc2\.cf2\.poecdn\.net/[0-9a-f]{40}/_next/'
+  chunks_regex = r'\"(https://psc2\.cf2\.poecdn\.net/[0-9a-f]{40}/_next/static/chunks.+?.js)"'
+
+  chunks = re.findall(chunks_regex, r.text)
   manifest_url = re.findall(manifest_regex, r.text)[0]
   base_url = re.findall(base_regex, r.text)[0]
 
   r2 = session.get(manifest_url)
   resources_regex = r'"(static/.+?)"'
   resources_list = re.findall(resources_regex, r2.text)
+  urls = []
+  for resource in resources_list:
+    urls.append(base_url + resource)
+  urls = list(set(urls + chunks))
 
   queries = {}
-  for resource in resources_list:
-    if not resource.endswith(".js"):
+  for url in urls:
+    if not url.endswith(".js"):
       continue
-    url = base_url + resource
 
     r3 = session.get(url)
     hashes_regex = r'params:{id:"([0-9a-f]{64})".+?name:"(\S+?)"'

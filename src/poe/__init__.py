@@ -29,12 +29,12 @@ headers = {
 }
 client_identifier = "chrome112"
 
-def load_queries():
-  try:
-    queries = json.loads(queries_path.read_text())
-  except FileNotFoundError:
-    logger.error("GraphQL queries file not found.")
-    queries = {}
+#load gql queries
+try:
+  queries = json.loads(queries_path.read_text())
+except FileNotFoundError:
+  logger.error("GraphQL queries file not found.")
+  queries = {}
 
 def generate_payload(query_name, variables):
   if query_name == "recv":
@@ -395,12 +395,12 @@ class Client:
       "subscriptions": [
         {
           "subscriptionName": "messageAdded",
-          "queryHash": queries["MessageAddedSubscription"],
+          "queryHash": queries["MessageAdded"],
           "query": None
         },
         {
           "subscriptionName": "viewerStateUpdated",
-          "queryHash": queries["ViewerStateUpdatedSubscription"],
+          "queryHash": queries["ViewerStateUpdated"],
           "query": None
         }
       ]
@@ -551,10 +551,16 @@ class Client:
         "bot": chatbot,
         "query": message,
         "chatId": chat_id,
-        "source": None,
+        "source": {
+          "chatInputMetadata": {
+            "useVoiceRecord": False
+          },
+          "sourceType": "chat_input"
+        },
         "clientNonce": generate_nonce(),
         "sdid": self.device_id,
         "withChatBreak": with_chat_break,
+        "attachments": []
       })
       del self.active_messages["pending"]
     except Exception as e:
@@ -769,5 +775,3 @@ class Client:
   def purge_all_conversations(self):
     logger.info("Purging all conversations")
     self.send_query("DeleteUserMessagesMutation", {})
-
-load_queries()
