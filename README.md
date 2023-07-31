@@ -236,6 +236,8 @@ print(chunk["text"])
 
 You can also send multiple messages in parallel using `threading` and receive their responses separately, as demonstrated in `/examples/parallel_messages.py`. Note that if you send messages too fast, the server will give an error, but the request will eventually succeed.
 
+The `client.is_busy` function can be used to check if there is currently a message being received.
+
 #### Clearing the Conversation Context:
 If you want to clear the the context of a conversation without sending a message, you can use `client.send_chat_break`. The only argument is the codename of the bot whose context will be cleared.
 

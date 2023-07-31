@@ -532,6 +532,9 @@ class Client:
       logger.error(traceback.format_exc())
       self.disconnect_ws()
       self.connect_ws()
+    
+  def is_busy(self):
+    return bool(self.active_messages)
 
   def send_message(self, chatbot, message, with_chat_break=False, timeout=20, async_recv=True, suggest_callback=None):
     # if there is another active message, wait until it has finished sending
