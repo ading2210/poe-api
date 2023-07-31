@@ -2,6 +2,9 @@ import tls_client as requests_tls
 import poe
 import re
 import json
+import pathlib
+
+#running this file will export the gql query ids to poe_graphql/queries.json
 
 if __name__ == "__main__":
   session = requests_tls.Session(client_identifier="chrome112")
@@ -37,6 +40,9 @@ if __name__ == "__main__":
     for query_hash, query_name in hashes_list:
       if "_" in query_name:
         query_name = query_name.split("_")[1]
+      query_name = query_name[0].upper()+query_name[1:]
       queries[query_name] = query_hash
 
-  print(json.dumps(queries, indent=2, sort_keys=True))
+  out_path = poe.queries_path / "queries.json"
+  json_text = json.dumps(queries, indent=2, sort_keys=True)
+  out_path.write_text(json_text)
