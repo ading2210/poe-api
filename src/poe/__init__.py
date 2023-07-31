@@ -685,7 +685,7 @@ class Client:
     if not type(message_ids) is list:
       message_ids = [int(message_ids)]
 
-    result = self.send_query("DeleteMessageMutation", {
+    result = self.send_query("DeleteUserMessagesMutation", {
       "messageIds": message_ids
     })
 
@@ -713,7 +713,7 @@ class Client:
                   prompt_public=True, pfp_url=None, linkification=False,
                   markdown_rendering=True, suggested_replies=False, private=False,
                   temperature=None):
-    result = self.send_query("PoeBotCreateMutation", {
+    result = self.send_query("PoeBotCreate", {
       "model": base_model,
       "displayName": display_name,
       "handle": handle,
@@ -747,7 +747,7 @@ class Client:
       bot_id = self.get_bot(handle)["defaultBotObject"]["botId"]
     new_handle = new_handle or handle
     
-    result = self.send_query("PoeBotEditMutation", {
+    result = self.send_query("PoeBotEdit", {
       "baseBot": base_model,
       "botId": bot_id,
       "handle": new_handle,
