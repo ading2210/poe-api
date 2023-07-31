@@ -182,6 +182,12 @@ class Client:
     self.next_data = self.get_next_data(overwrite_vars=True)
     self.channel = self.get_channel_data()
 
+    self.gql_headers = {
+      "poe-formkey": self.formkey,
+      "poe-tchannel": self.channel["channel"],
+    }
+    self.gql_headers = {**self.gql_headers, **self.headers}
+
     if not hasattr(self, "bots"):
       self.bots = self.get_bots(download_next_data=False)
     if not hasattr(self, "bot_names"):
@@ -190,11 +196,6 @@ class Client:
     if self.device_id is None:
       self.device_id = self.get_device_id()
 
-    self.gql_headers = {
-      "poe-formkey": self.formkey,
-      "poe-tchannel": self.channel["channel"],
-    }
-    self.gql_headers = {**self.gql_headers, **self.headers}
     self.subscribe()
 
   def get_device_id(self):
@@ -273,15 +274,22 @@ class Client:
 
   def get_bots(self, download_next_data=True):
     logger.info("Downloading all bots...")
-    if download_next_data:
-      next_data = self.get_next_data(overwrite_vars=True)
-    else:
-      next_data = self.next_data
-
     if not "availableBotsConnection" in self.viewer:
       raise RuntimeError("Invalid token or no bots are available.")
-    bot_list_url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/index.json'
-    bot_list = self.viewer["availableBotsConnection"]["edges"]
+    
+    bot_list_data = self.send_query("BotSwitcherModalQuery", {})["data"]["viewer"]["availableBotsConnection"]
+    bot_list = bot_list_data["edges"]
+    next_page = bot_list_data["pageInfo"]["hasNextPage"]
+    end_cursor = bot_list_data["pageInfo"]["endCursor"]
+
+    while next_page:
+      bot_list_data = self.send_query("AvailableBotsListModalPaginationQuery", {
+        "cursor": end_cursor,
+        "limit": 10
+      })["data"]["viewer"]["availableBotsConnection"]
+      bot_list += bot_list_data["edges"]
+      next_page = bot_list_data["pageInfo"]["hasNextPage"]
+      end_cursor = bot_list_data["pageInfo"]["endCursor"]
 
     threads = []
     bots = {}
@@ -638,9 +646,10 @@ class Client:
 
   def send_chat_break(self, chatbot):
     logger.info(f"Sending chat break to {chatbot}")
-    result = self.send_query("AddMessageBreakMutation", {
-      "chatId": self.get_bot_by_codename(chatbot)["chatId"]}
-    )
+    result = self.send_query("AddMessageBreakEdgeMutation", {
+      "chatId": self.get_bot_by_codename(chatbot)["chatId"],
+      "connections": []
+    })
     return result["data"]["messageBreakEdgeCreate"]["message"]
 
   def get_message_history(self, chatbot, count=25, cursor=None):

@@ -100,13 +100,17 @@ The client downloads all of the available bots upon initialization and stores th
 print(json.dumps(client.bot_names, indent=2))
 """
 {
-  "capybara": "Assistant",
   "chinchilla": "ChatGPT",
-  "beaver": "GPT-4",
-  "a2_100k": "Claude-instant-100k",
   "a2": "Claude-instant",
-  "agouti": "ChatGPT-16k",
+  "capybara": "Assistant",
+  "a2_100k": "Claude-instant-100k",
+  "llama_2_7b_chat": "Llama-2-7b",
+  "llama_2_13b_chat": "Llama-2-13b",
   "a2_2": "Claude-2-100k",
+  "llama_2_70b_chat": "Llama-2-70b",
+  "agouti": "ChatGPT-16k",
+  "beaver": "GPT-4",
+  "vizcacha": "GPT-4-32k",
   "acouchy": "Google-PaLM"
 }
 """
