@@ -655,6 +655,15 @@ class Client:
     })
     return result["data"]["messageBreakEdgeCreate"]["message"]
 
+  def stop_generation(self, chatbot, message_id):
+    logger.info(f"Stopping message generation from {chatbot}")
+    result = self.send_query("MessageCancel", {
+      "messageId": message_id,
+      "linkifiedTextLength": 0,
+      "textLength": 0
+    })
+    return result["data"]["messageCancel"]["message"]
+
   def get_message_history(self, chatbot, count=25, cursor=None):
     logger.info(f"Downloading {count} messages from {chatbot}")
 
