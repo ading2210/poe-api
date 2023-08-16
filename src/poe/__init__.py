@@ -1,7 +1,6 @@
 import re, json, random, logging, time, queue, threading, traceback, hashlib, string, random, os
 import quickjs
-import requests
-import tls_client as requests_tls
+import httpx
 import secrets
 import websocket
 import uuid
@@ -157,10 +156,15 @@ class Client:
 
   def setup_session(self):
     logger.info("Setting up session...")
+    self.session = httpx.Client()
+
+    """
     if self.client_identifier:
       self.session = requests_tls.Session(client_identifier=self.client_identifier)
     else:
       self.session = requests.Session()
+    """
+
 
     if self.proxy:
       self.session.proxies = {
@@ -210,15 +214,15 @@ class Client:
 
     script_text = """
       let QuickJS = undefined, process = undefined;
+      let document = {a: 1};
       let window = {
-        document: {a:1},
         navigator: {
           userAgent: "a"
         }
       };
     """
     script_text += f"window._{key} = '{value}';"
-    script_text += "".join(re.findall(script_regex, html))
+    script_text += "".join(re.findall(script_regex, html)[:2])
 
     function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
     function_text = re.search(function_regex, script_text).group(1)

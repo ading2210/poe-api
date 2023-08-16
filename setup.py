@@ -9,7 +9,7 @@ long_description = (base_path / "README.md").read_text()
 
 setuptools.setup(
   name="poe-api",
-  version="0.5.2",
+  version="0.5.3",
   author="ading2210",
   license="GPLv3",
   description="A reverse engineered API wrapper for Quora's Poe",
@@ -31,8 +31,8 @@ setuptools.setup(
   include_package_data=True,
   install_requires=[
     "websocket-client",
-    "requests[socks]",
-    "python-socks",
+    "httpx",
+    "brotlicffi",
     "tls_client",
     "quickjs"
   ],
