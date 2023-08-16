@@ -1,4 +1,4 @@
-import tls_client as requests_tls
+import httpx
 import poe
 import re
 import json
@@ -7,7 +7,7 @@ import pathlib
 #running this file will export the gql query ids to poe_graphql/queries.json
 
 if __name__ == "__main__":
-  session = requests_tls.Session(client_identifier="chrome112")
+  session = httpx.Client()
   headers = {**poe.headers, **{
     "Cache-Control": "no-cache",
     "Sec-Fetch-Dest": "document",
@@ -47,6 +47,7 @@ if __name__ == "__main__":
 
   queries = {}
   for url in urls:
+    print("Downloading and parsing "+url)
     if not url.endswith(".js"):
       continue
     
