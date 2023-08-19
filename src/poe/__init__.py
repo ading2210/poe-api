@@ -239,6 +239,7 @@ class Client:
       salt = context.eval(salt_script)
     except Exception as e:
       logger.warn("Failed to obtain poe-tag-id salt: "+str(e))
+      logger.warn("Falling back to hardcoded value. Detection may be more likely.")
 
     return formkey, salt
 
@@ -258,12 +259,9 @@ class Client:
         self.formkey, self.formkey_salt = self.extract_formkey(r.text, r2.text)
       
       if self.formkey_salt is None:
-        self.formkey_salt = "4LxgHM6KpFqokX0Ox"
+        self.formkey_salt = "3L346H46q37gXddko"
 
-      if "payload" in next_data["props"]["pageProps"]:
-        self.viewer = next_data["props"]["pageProps"]["payload"]["viewer"]
-      else:
-        self.viewer = next_data["props"]["pageProps"]["data"]["viewer"]
+      self.viewer = next_data["props"]["initialData"]["data"]["pageQuery"]["viewer"]
       self.user_id = self.viewer["poeUser"]["id"]
       self.next_data = next_data
 
