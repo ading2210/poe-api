@@ -7,6 +7,7 @@ import uuid
 import random
 from pathlib import Path
 from urllib.parse import urlparse
+from functools import lru_cache
 
 parent_path = Path(__file__).resolve().parent
 queries_path = parent_path / "poe_graphql" / "queries.json"
@@ -42,7 +43,7 @@ def generate_payload(query_name, variables):
   return {
     "extensions": {
       "hash": queries[query_name]
-    },  
+    },
     "queryName": query_name,
     "variables": variables
   }
@@ -231,7 +232,7 @@ class Client:
     function_regex = r'(window\.[a-zA-Z0-9]{17})=function'
     function_text = re.search(function_regex, script_text).group(1)
     script_text += f"{function_text}();"
-    
+
     context = quickjs.Context()
     formkey = context.eval(script_text)
 
@@ -261,7 +262,7 @@ class Client:
         script_src = re.search(script_src_regex, r.text).group(1)
         r2 = request_with_retries(self.session.get, script_src)
         self.formkey, self.formkey_salt = self.extract_formkey(r.text, r2.text)
-      
+
       if self.formkey_salt is None:
         self.formkey_salt = "3L346H46q37gXddko"
 
@@ -271,6 +272,7 @@ class Client:
 
     return next_data
 
+  @lru_cache(maxsize=None)
   def get_bot(self, handle):
     url = f'https://poe.com/_next/data/{self.next_data["buildId"]}/{handle}.json'
 
@@ -282,7 +284,7 @@ class Client:
     logger.info("Downloading all bots...")
     if not "availableBotsConnection" in self.viewer:
       raise RuntimeError("Invalid token or no bots are available.")
-    
+
     bot_list_data = self.send_query("BotSwitcherModalQuery", {})["data"]["viewer"]["availableBotsConnection"]
     bot_list = bot_list_data["edges"]
     next_page = bot_list_data["pageInfo"]["hasNextPage"]
@@ -538,7 +540,7 @@ class Client:
       logger.error(traceback.format_exc())
       self.disconnect_ws()
       self.connect_ws()
-    
+
   def is_busy(self):
     return bool(self.active_messages)
 
@@ -764,7 +766,7 @@ class Client:
     if bot_id is None and handle is not None:
       bot_id = self.get_bot(handle)["defaultBotObject"]["botId"]
     new_handle = new_handle or handle
-    
+
     result = self.send_query("PoeBotEdit", {
       "baseBot": base_model,
       "botId": bot_id,
