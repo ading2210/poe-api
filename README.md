@@ -1,3 +1,7 @@
+# Important:
+
+## This project has been unmaintained for over a month and does not work. See [issue #221](https://github.com/ading2210/poe-api/issues/231) for more details.
+
 # Python Poe API
 
 [![PyPi Version](https://img.shields.io/pypi/v/poe-api.svg)](https://pypi.org/project/poe-api/)

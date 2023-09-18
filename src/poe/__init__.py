@@ -14,6 +14,7 @@ queries = {}
 
 logging.basicConfig()
 logger = logging.getLogger()
+logger.error("This library is unmaintained and will not work. See https://github.com/ading2210/poe-api/issues/231 for more details.")
 
 user_agent = "This will be ignored! See the README for info on how to set custom headers."
 headers = {
@@ -189,6 +190,9 @@ class Client:
     self.gql_headers = {
       "poe-formkey": self.formkey,
       "poe-tchannel": self.channel["channel"],
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "same-origin",
     }
     self.gql_headers = {**self.gql_headers, **self.headers}
 
